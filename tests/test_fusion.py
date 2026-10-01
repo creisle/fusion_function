@@ -52,7 +52,7 @@ def _assert_kinase_preserved(result: FusionDomainResult, transcript_id: str) -> 
 
     assert kinase_domains
 
-    assert any(feature["fusion_sequence_status"] == "preserved" for feature in kinase_domains)
+    assert any(feature["post_translation_status"] == "preserved" for feature in kinase_domains)
 
 
 def _get_transcript(
@@ -122,8 +122,8 @@ def test_finalize_domains_filters_irrelevant_entry_types() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -135,8 +135,8 @@ def test_finalize_domains_filters_irrelevant_entry_types() -> None:
             "end": 498,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -148,8 +148,8 @@ def test_finalize_domains_filters_irrelevant_entry_types() -> None:
             "end": 509,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -161,8 +161,8 @@ def test_finalize_domains_filters_irrelevant_entry_types() -> None:
             "end": 996,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -188,8 +188,8 @@ def test_finalize_domains_keeps_functionally_relevant_sites() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -201,8 +201,8 @@ def test_finalize_domains_keeps_functionally_relevant_sites() -> None:
             "end": 271,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -214,8 +214,8 @@ def test_finalize_domains_keeps_functionally_relevant_sites() -> None:
             "end": 371,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -227,8 +227,8 @@ def test_finalize_domains_keeps_functionally_relevant_sites() -> None:
             "end": 375,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -255,8 +255,8 @@ def test_finalize_domains_does_not_merge_sites_with_parent_domain() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -268,8 +268,8 @@ def test_finalize_domains_does_not_merge_sites_with_parent_domain() -> None:
             "end": 271,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -281,8 +281,8 @@ def test_finalize_domains_does_not_merge_sites_with_parent_domain() -> None:
             "end": 371,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -310,8 +310,8 @@ def test_finalize_domains_collapses_redundant_overlapping_domains() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -323,8 +323,8 @@ def test_finalize_domains_collapses_redundant_overlapping_domains() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -336,8 +336,8 @@ def test_finalize_domains_collapses_redundant_overlapping_domains() -> None:
             "end": 492,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -363,8 +363,8 @@ def test_finalize_domains_merges_unresolved_domain_annotation() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -376,8 +376,8 @@ def test_finalize_domains_merges_unresolved_domain_annotation() -> None:
             "end": 497,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -401,8 +401,8 @@ def test_finalize_domains_collapses_short_member_annotations() -> None:
             "end": 492,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -414,8 +414,8 @@ def test_finalize_domains_collapses_short_member_annotations() -> None:
             "end": 371,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -437,8 +437,8 @@ def test_finalize_domains_keeps_separate_domain_occurrences() -> None:
             "end": 200,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -450,8 +450,8 @@ def test_finalize_domains_keeps_separate_domain_occurrences() -> None:
             "end": 500,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -473,8 +473,8 @@ def test_finalize_domains_does_not_transitively_chain_domains() -> None:
             "end": 200,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -486,8 +486,8 @@ def test_finalize_domains_does_not_transitively_chain_domains() -> None:
             "end": 230,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -499,8 +499,8 @@ def test_finalize_domains_does_not_transitively_chain_domains() -> None:
             "end": 290,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -522,8 +522,8 @@ def test_finalize_domains_does_not_merge_different_feature_types() -> None:
             "end": 200,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -535,8 +535,8 @@ def test_finalize_domains_does_not_merge_different_feature_types() -> None:
             "end": 200,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -558,8 +558,8 @@ def test_finalize_domains_combines_breakpoint_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -571,8 +571,8 @@ def test_finalize_domains_combines_breakpoint_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "disrupted",
             "breakpoint_retained_percent": 50.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -596,8 +596,8 @@ def test_finalize_domains_combines_splicing_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -609,8 +609,8 @@ def test_finalize_domains_combines_splicing_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "lost",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "lost",
+            "post_translation_status": "preserved",
         },
     ]
 
@@ -618,7 +618,7 @@ def test_finalize_domains_combines_splicing_statuses() -> None:
 
     assert len(result) == 1
 
-    assert result[0]["splicing_based_status"] == "preserved/lost"
+    assert result[0]["post_splicing_status"] == "preserved/lost"
 
 
 def test_finalize_domains_combines_sequence_statuses() -> None:
@@ -634,8 +634,8 @@ def test_finalize_domains_combines_sequence_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -647,8 +647,8 @@ def test_finalize_domains_combines_sequence_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "frame_disrupted",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "frame_disrupted",
         },
     ]
 
@@ -656,7 +656,7 @@ def test_finalize_domains_combines_sequence_statuses() -> None:
 
     assert len(result) == 1
 
-    assert result[0]["fusion_sequence_status"] == "preserved/frame_disrupted"
+    assert result[0]["post_translation_status"] == "preserved/frame_disrupted"
 
 
 def test_finalize_domains_deduplicates_existing_slash_statuses() -> None:
@@ -672,8 +672,8 @@ def test_finalize_domains_deduplicates_existing_slash_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved/frame_disrupted",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved/frame_disrupted",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
@@ -685,14 +685,14 @@ def test_finalize_domains_deduplicates_existing_slash_statuses() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
     ]
 
     result = _finalize_domains(domains)
 
-    assert result[0]["fusion_sequence_status"] == "preserved/frame_disrupted"
+    assert result[0]["post_translation_status"] == "preserved/frame_disrupted"
 
 
 def test_finalize_domains_prefers_domain_name_over_overlapping_specific_family() -> None:
@@ -708,8 +708,8 @@ def test_finalize_domains_prefers_domain_name_over_overlapping_specific_family()
             "end": 350,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         },
         {
             "transcript_id": GENE2TRANSCRIPT["AMACR"],
@@ -721,8 +721,8 @@ def test_finalize_domains_prefers_domain_name_over_overlapping_specific_family()
             "end": 373,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
             "specific_name": "ALPHA-METHYLACYL-COA RACEMASE",
         },
     ]
@@ -749,8 +749,8 @@ def test_finalize_domains_keeps_specific_family_when_no_domain_entry_exists() ->
             "end": 373,
             "breakpoint_based_status": "disrupted",
             "breakpoint_retained_percent": 83.4,
-            "splicing_based_status": None,
-            "fusion_sequence_status": None,
+            "post_splicing_status": None,
+            "post_translation_status": None,
             "specific_name": "ALPHA-METHYLACYL-COA RACEMASE",
         }
     ]
@@ -781,8 +781,8 @@ def test_final_domain_schema_is_concise() -> None:
             "end": 493,
             "breakpoint_based_status": "included",
             "breakpoint_retained_percent": 100.0,
-            "splicing_based_status": "preserved",
-            "fusion_sequence_status": "preserved",
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved",
         }
     ]
     result = _finalize_domains(domains)
@@ -796,8 +796,8 @@ def test_final_domain_schema_is_concise() -> None:
         "end",
         "breakpoint_based_status",
         "breakpoint_retained_percent",
-        "splicing_based_status",
-        "fusion_sequence_status",
+        "post_splicing_status",
+        "post_translation_status",
     }
 
     assert "sources" not in result[0]
@@ -893,7 +893,7 @@ def test_bcr_exon14_abl1_exon2_uses_functional_abl1_domain_names(
 
         assert abl1_domains[interpro_id]["breakpoint_retained_percent"] == 100.0
 
-        assert abl1_domains[interpro_id]["fusion_sequence_status"] == "preserved"
+        assert abl1_domains[interpro_id]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.integration
@@ -923,14 +923,14 @@ def test_bcr_exon14_abl1_exon2_preserves_functional_abl1_sites(
     assert any(
         feature["domain_type"] == "binding_site"
         and "kinase" in feature["name"].lower()
-        and feature["fusion_sequence_status"] == "preserved"
+        and feature["post_translation_status"] == "preserved"
         for feature in abl1_features
     )
 
     assert any(
         feature["domain_type"] == "active_site"
         and "kinase" in feature["name"].lower()
-        and feature["fusion_sequence_status"] == "preserved"
+        and feature["post_translation_status"] == "preserved"
         for feature in abl1_features
     )
 
@@ -985,7 +985,7 @@ def test_bcr_exon14_abl1_exon2_excluded_domains_have_no_downstream_status(
     assert excluded
 
     assert all(
-        feature["splicing_based_status"] is None and feature["fusion_sequence_status"] is None
+        feature["post_splicing_status"] is None and feature["post_translation_status"] is None
         for feature in excluded
     )
 
@@ -1021,8 +1021,8 @@ def test_bcr_exon14_abl1_exon2_public_domain_schema(reference_db: ReferenceDatab
             "end",
             "breakpoint_based_status",
             "breakpoint_retained_percent",
-            "splicing_based_status",
-            "fusion_sequence_status",
+            "post_splicing_status",
+            "post_translation_status",
         }
         for feature in result["domains"]
     )
@@ -1121,11 +1121,9 @@ def test_slc45a2_exon2_amacr_exon2_retains_racemase_domain(reference_db: Referen
 
     # Partial domains still need splicing and translation checks. These statuses
     # describe the surviving portion, while the original domain stays disrupted.
-    assert all(
-        feature["splicing_based_status"] is not None for feature in retained_racemase_domains
-    )
+    assert all(feature["post_splicing_status"] is not None for feature in retained_racemase_domains)
     assert any(
-        feature["fusion_sequence_status"] is not None for feature in retained_racemase_domains
+        feature["post_translation_status"] is not None for feature in retained_racemase_domains
     )
 
     partial_domains = [
@@ -1133,7 +1131,7 @@ def test_slc45a2_exon2_amacr_exon2_retains_racemase_domain(reference_db: Referen
         for feature in result["domains"]
         if 0.0 < feature["breakpoint_retained_percent"] < 100.0
     ]
-    assert all(feature["splicing_based_status"] is not None for feature in partial_domains)
+    assert all(feature["post_splicing_status"] is not None for feature in partial_domains)
 
 
 @pytest.mark.integration
@@ -1247,7 +1245,7 @@ def test_ewsr1_exon7_fli1_exon6_type1(reference_db: ReferenceDatabase) -> None:
     assert any(
         feature["breakpoint_based_status"] == "included"
         and feature["breakpoint_retained_percent"] == 100.0
-        and feature["fusion_sequence_status"] == "preserved"
+        and feature["post_translation_status"] == "preserved"
         for feature in fli1_ets_domains
     )
 
@@ -1293,7 +1291,7 @@ def test_ewsr1_exon7_fli1_exon5_type2(reference_db: ReferenceDatabase) -> None:
         and feature["interpro_id"] == "IPR000418"
         and feature["breakpoint_based_status"] == "included"
         and feature["breakpoint_retained_percent"] == 100.0
-        and feature["fusion_sequence_status"] == "preserved"
+        and feature["post_translation_status"] == "preserved"
         for feature in result["domains"]
     )
 
@@ -1340,6 +1338,6 @@ def test_ewsr1_exon7_erg_exon6(reference_db: ReferenceDatabase) -> None:
         and feature["interpro_id"] == "IPR000418"
         and feature["breakpoint_based_status"] == "included"
         and feature["breakpoint_retained_percent"] == 100.0
-        and feature["fusion_sequence_status"] == "preserved"
+        and feature["post_translation_status"] == "preserved"
         for feature in result["domains"]
     )

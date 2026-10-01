@@ -61,12 +61,12 @@ def single_partner_result(reference, transcript_id, breakpoint, terminus):
     assert {d["transcript_id"] for d in result["domains"]} == {transcript_id}
     for domain in result["domains"]:
         if domain["breakpoint_based_status"] == "excluded":
-            assert domain["splicing_based_status"] is None
-            assert domain["fusion_sequence_status"] is None
+            assert domain["post_splicing_status"] is None
+            assert domain["post_translation_status"] is None
         else:
-            assert domain["splicing_based_status"] is not None
-            if "preserved" in domain["splicing_based_status"].split("/"):
-                assert domain["fusion_sequence_status"] is not None
+            assert domain["post_splicing_status"] is not None
+            if "preserved" in domain["post_splicing_status"].split("/"):
+                assert domain["post_translation_status"] is not None
     return result
 
 
@@ -95,8 +95,8 @@ def test_single_gene_utr_breakpoints(reference_db, transcript_id, terminus, utr,
     if status == "included":
         assert result["frame_status"] == "in_frame"
         assert "alternative_start_used" not in result
-        assert all(d["splicing_based_status"] == "preserved" for d in result["domains"])
-        assert all(d["fusion_sequence_status"] == "preserved" for d in result["domains"])
+        assert all(d["post_splicing_status"] == "preserved" for d in result["domains"])
+        assert all(d["post_translation_status"] == "preserved" for d in result["domains"])
     else:
         assert result["frame_status"] is None
 
@@ -178,8 +178,8 @@ def test_late_n_terminal_breakpoint_retains_all_domains(reference_db, transcript
     assert all(domain["breakpoint_based_status"] == "included" for domain in result["domains"])
     assert all(domain["breakpoint_retained_percent"] == 100.0 for domain in result["domains"])
     assert result["frame_status"] == "in_frame"
-    assert all(d["splicing_based_status"] == "preserved" for d in result["domains"])
-    assert all(d["fusion_sequence_status"] == "preserved" for d in result["domains"])
+    assert all(d["post_splicing_status"] == "preserved" for d in result["domains"])
+    assert all(d["post_translation_status"] == "preserved" for d in result["domains"])
 
 
 @pytest.mark.integration
@@ -203,8 +203,8 @@ def test_single_known_partner_is_assumed_disruptive(reference_db, known_slot, pa
     assert any(d["breakpoint_based_status"] == "disrupted" for d in result["domains"])
     assert any(0 < d["breakpoint_retained_percent"] < 100 for d in result["domains"])
     retained = [d for d in result["domains"] if d["breakpoint_based_status"] != "excluded"]
-    assert all(d["splicing_based_status"] is not None for d in retained)
-    assert any(d["fusion_sequence_status"] is not None for d in retained)
+    assert all(d["post_splicing_status"] is not None for d in retained)
+    assert any(d["post_translation_status"] is not None for d in retained)
 
 
 @pytest.mark.parametrize("terminus", ["N", "C"])

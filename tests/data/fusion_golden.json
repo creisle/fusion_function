@@ -21,8 +21,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -33,8 +33,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -45,8 +45,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -57,8 +57,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -69,8 +69,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted/excluded",
           "breakpoint_retained_percent": 8.1,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -81,8 +81,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -93,8 +93,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -105,8 +105,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -117,8 +117,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -129,8 +129,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -141,8 +141,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -153,8 +153,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -184,8 +184,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -196,8 +196,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -208,8 +208,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -220,8 +220,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -232,8 +232,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -244,8 +244,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -256,8 +256,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -268,8 +268,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -280,8 +280,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -292,8 +292,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -304,8 +304,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -316,8 +316,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -347,8 +347,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -359,8 +359,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -371,8 +371,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -383,8 +383,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -395,8 +395,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -407,8 +407,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -419,8 +419,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -431,8 +431,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -443,8 +443,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -455,8 +455,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -467,8 +467,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -479,8 +479,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -510,8 +510,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -522,8 +522,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -534,8 +534,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -546,8 +546,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -558,8 +558,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -570,8 +570,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -582,8 +582,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -594,8 +594,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -606,8 +606,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -618,8 +618,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -630,8 +630,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -642,8 +642,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -673,8 +673,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -685,8 +685,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -697,8 +697,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -709,8 +709,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -721,8 +721,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -733,8 +733,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -745,8 +745,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -757,8 +757,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -769,8 +769,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -781,8 +781,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -793,8 +793,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -805,8 +805,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -836,8 +836,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -848,8 +848,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -860,8 +860,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -872,8 +872,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -884,8 +884,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -896,8 +896,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -908,8 +908,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -920,8 +920,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -932,8 +932,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -944,8 +944,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -956,8 +956,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -968,8 +968,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -999,8 +999,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1011,8 +1011,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1023,8 +1023,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1035,8 +1035,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1047,8 +1047,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1059,8 +1059,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1071,8 +1071,8 @@
           "end": 121,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1083,8 +1083,8 @@
           "end": 217,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1095,8 +1095,8 @@
           "end": 492,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1107,8 +1107,8 @@
           "end": 271,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1119,8 +1119,8 @@
           "end": 371,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1131,8 +1131,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1162,8 +1162,8 @@
           "end": 64,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318522",
@@ -1174,8 +1174,8 @@
           "end": 293,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318522",
@@ -1186,8 +1186,8 @@
           "end": 578,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 70.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000318522",
@@ -1198,8 +1198,8 @@
           "end": 864,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1210,8 +1210,8 @@
           "end": 427,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1222,8 +1222,8 @@
           "end": 636,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1234,8 +1234,8 @@
           "end": 961,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1246,8 +1246,8 @@
           "end": 1382,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1258,8 +1258,8 @@
           "end": 1150,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1270,8 +1270,8 @@
           "end": 1257,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000389048",
@@ -1282,8 +1282,8 @@
           "end": 1284,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1313,8 +1313,8 @@
           "end": 333,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000302418",
@@ -1325,8 +1325,8 @@
           "end": 236,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000302418",
@@ -1337,8 +1337,8 @@
           "end": 903,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1349,8 +1349,8 @@
           "end": 153,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1361,8 +1361,8 @@
           "end": 272,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1373,8 +1373,8 @@
           "end": 379,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1385,8 +1385,8 @@
           "end": 506,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1397,8 +1397,8 @@
           "end": 620,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1409,8 +1409,8 @@
           "end": 1005,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1421,8 +1421,8 @@
           "end": 758,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000355710",
@@ -1433,8 +1433,8 @@
           "end": 882,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1464,8 +1464,8 @@
           "end": 521,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 31.5,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000335606",
@@ -1476,8 +1476,8 @@
           "end": 373,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 77.9,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1507,8 +1507,8 @@
           "end": 75,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1519,8 +1519,8 @@
           "end": 691,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1531,8 +1531,8 @@
           "end": 664,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1543,8 +1543,8 @@
           "end": 868,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1555,8 +1555,8 @@
           "end": 1020,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 27.6,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1567,8 +1567,8 @@
           "end": 1249,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1579,8 +1579,8 @@
           "end": 121,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1591,8 +1591,8 @@
           "end": 217,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1603,8 +1603,8 @@
           "end": 492,
           "breakpoint_based_status": "included/disrupted/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "frame_disrupted"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "frame_disrupted"
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1615,8 +1615,8 @@
           "end": 271,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1627,8 +1627,8 @@
           "end": 371,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000318560",
@@ -1639,8 +1639,8 @@
           "end": 1130,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "frame_disrupted"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "frame_disrupted"
         }
       ],
       "translation_start": {
@@ -1670,8 +1670,8 @@
           "end": 447,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000397938",
@@ -1682,8 +1682,8 @@
           "end": 549,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000527786",
@@ -1694,8 +1694,8 @@
           "end": 198,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000527786",
@@ -1706,8 +1706,8 @@
           "end": 365,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1737,8 +1737,8 @@
           "end": 447,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000397938",
@@ -1749,8 +1749,8 @@
           "end": 549,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000527786",
@@ -1761,8 +1761,8 @@
           "end": 198,
           "breakpoint_based_status": "disrupted",
           "breakpoint_retained_percent": 2.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000527786",
@@ -1773,8 +1773,8 @@
           "end": 365,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1804,8 +1804,8 @@
           "end": 447,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000397938",
@@ -1816,8 +1816,8 @@
           "end": 549,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000453032",
@@ -1828,8 +1828,8 @@
           "end": 107,
           "breakpoint_based_status": "excluded",
           "breakpoint_retained_percent": 0.0,
-          "splicing_based_status": null,
-          "fusion_sequence_status": null
+          "post_splicing_status": null,
+          "post_translation_status": null
         },
         {
           "transcript_id": "ENST00000453032",
@@ -1840,8 +1840,8 @@
           "end": 303,
           "breakpoint_based_status": "included",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         }
       ],
       "translation_start": {
@@ -1871,8 +1871,8 @@
           "end": 75,
           "breakpoint_based_status": "included/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1883,8 +1883,8 @@
           "end": 691,
           "breakpoint_based_status": "included/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1895,8 +1895,8 @@
           "end": 664,
           "breakpoint_based_status": "included/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1907,8 +1907,8 @@
           "end": 868,
           "breakpoint_based_status": "included/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved/lost",
-          "fusion_sequence_status": "preserved"
+          "post_splicing_status": "preserved/lost",
+          "post_translation_status": "preserved"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1919,8 +1919,8 @@
           "end": 1020,
           "breakpoint_based_status": "included/disrupted/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved/lost",
-          "fusion_sequence_status": "preserved/frame_disrupted"
+          "post_splicing_status": "preserved/lost",
+          "post_translation_status": "preserved/frame_disrupted"
         },
         {
           "transcript_id": "ENST00000305877",
@@ -1931,8 +1931,8 @@
           "end": 1249,
           "breakpoint_based_status": "included/excluded",
           "breakpoint_retained_percent": 100.0,
-          "splicing_based_status": "preserved",
-          "fusion_sequence_status": "preserved/frame_disrupted"
+          "post_splicing_status": "preserved",
+          "post_translation_status": "preserved/frame_disrupted"
         }
       ],
       "translation_start": {

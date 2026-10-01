@@ -71,8 +71,8 @@ def test_partial_domains_preserve_retained_portion(terminus, percent):
     (result,) = _annotate_feature_statuses(side, [product_for(side)])
     assert result["breakpoint_based_status"] == "disrupted"
     assert result["breakpoint_retained_percent"] == percent
-    assert result["splicing_based_status"] == "preserved"
-    assert result["fusion_sequence_status"] == "preserved"
+    assert result["post_splicing_status"] == "preserved"
+    assert result["post_translation_status"] == "preserved"
     # Public bounds and the cached reference describe the original whole domain.
     assert (result["start"], result["end"]) == (1, 10)
     assert (result["cds_start"], result["cds_end"]) == (1, 30)
@@ -92,8 +92,8 @@ def test_partial_domains_preserve_retained_portion(terminus, percent):
 def test_partial_domains_check_premature_stops(terminus, stop, expected):
     side = partial_side(terminus)
     (result,) = _annotate_feature_statuses(side, [product_for(side, stop=stop)])
-    assert result["splicing_based_status"] == "preserved"
-    assert result["fusion_sequence_status"] == expected
+    assert result["post_splicing_status"] == "preserved"
+    assert result["post_translation_status"] == expected
 
 
 @pytest.mark.parametrize("terminus", ["N", "C"])
@@ -101,8 +101,8 @@ def test_partial_domains_check_premature_stops(terminus, stop, expected):
 def test_partial_domains_check_frame(terminus, options):
     side = partial_side(terminus)
     (result,) = _annotate_feature_statuses(side, [product_for(side, **options)])
-    assert result["splicing_based_status"] == "preserved"
-    assert result["fusion_sequence_status"] == "frame_disrupted"
+    assert result["post_splicing_status"] == "preserved"
+    assert result["post_translation_status"] == "frame_disrupted"
 
 
 @pytest.mark.parametrize("terminus", ["N", "C"])
@@ -117,8 +117,8 @@ def test_partial_domains_detect_further_splicing_loss(terminus, all_removed):
         product["coding_fragments"].pop()
     (result,) = _annotate_feature_statuses(side, [product])
     assert result["breakpoint_based_status"] == "disrupted"
-    assert result["splicing_based_status"] == "lost"
-    assert result["fusion_sequence_status"] is None
+    assert result["post_splicing_status"] == "lost"
+    assert result["post_translation_status"] is None
 
 
 def test_partial_domain_combines_alternative_products():
@@ -128,8 +128,8 @@ def test_partial_domain_combines_alternative_products():
     (result,) = _annotate_feature_statuses(
         side, [product_for(side), product_for(side, shift=1), lost]
     )
-    assert result["splicing_based_status"] == "preserved/lost"
-    assert result["fusion_sequence_status"] == "preserved/frame_disrupted"
+    assert result["post_splicing_status"] == "preserved/lost"
+    assert result["post_translation_status"] == "preserved/frame_disrupted"
 
 
 def test_excluded_domain_has_no_downstream_status():
@@ -138,5 +138,5 @@ def test_excluded_domain_has_no_downstream_status():
     (result,) = _annotate_feature_statuses(side, [product_for(side)])
     assert result["breakpoint_based_status"] == "excluded"
     assert result["breakpoint_retained_percent"] == 0.0
-    assert result["splicing_based_status"] is None
-    assert result["fusion_sequence_status"] is None
+    assert result["post_splicing_status"] is None
+    assert result["post_translation_status"] is None

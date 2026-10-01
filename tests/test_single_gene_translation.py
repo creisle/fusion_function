@@ -125,8 +125,8 @@ def test_n_terminal_sequence_is_spliced_and_checked_normally(strand):
     assert result["frame_status"] == "in_frame"
     assert "alternative_start_used" not in result
     assert start_prediction(result) == "native_start_retained"
-    assert all(d["splicing_based_status"] == "preserved" for d in domains.values())
-    assert all(d["fusion_sequence_status"] == "preserved" for d in domains.values())
+    assert all(d["post_splicing_status"] == "preserved" for d in domains.values())
+    assert all(d["post_translation_status"] == "preserved" for d in domains.values())
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -136,7 +136,7 @@ def test_c_terminal_5utr_keeps_native_start_even_with_upstream_atg(strand):
     assert result["frame_status"] == "in_frame"
     assert "alternative_start_used" not in result
     assert start_prediction(result) == "native_start_retained"
-    assert all(d["fusion_sequence_status"] == "preserved" for d in domains.values())
+    assert all(d["post_translation_status"] == "preserved" for d in domains.values())
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -146,9 +146,9 @@ def test_retained_start_coordinate_without_atg_uses_next_start(strand):
     reference.transcript["premrna_sequence"] = sequence[:3] + "ACG" + sequence[6:]
     result, domains = annotate(reference, genomic(1), "C")
     assert start_prediction(result) == "alternative_start_found"
-    assert domains["early"]["fusion_sequence_status"] == "translation_start_excluded"
-    assert domains["middle"]["fusion_sequence_status"] == "translation_start_disrupted"
-    assert domains["late"]["fusion_sequence_status"] == "preserved"
+    assert domains["early"]["post_translation_status"] == "translation_start_excluded"
+    assert domains["middle"]["post_translation_status"] == "translation_start_disrupted"
+    assert domains["late"]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -164,10 +164,10 @@ def test_next_start_excludes_earlier_domain_and_truncates_overlapping_domain(str
     assert result["frame_status"] == "in_frame"
     assert all(d["breakpoint_based_status"] == "included" for d in domains.values())
     assert all(d["breakpoint_retained_percent"] == 100.0 for d in domains.values())
-    assert all(d["splicing_based_status"] == "preserved" for d in domains.values())
-    assert domains["early"]["fusion_sequence_status"] == "translation_start_excluded"
-    assert domains["middle"]["fusion_sequence_status"] == "translation_start_disrupted"
-    assert domains["late"]["fusion_sequence_status"] == "preserved"
+    assert all(d["post_splicing_status"] == "preserved" for d in domains.values())
+    assert domains["early"]["post_translation_status"] == "translation_start_excluded"
+    assert domains["middle"]["post_translation_status"] == "translation_start_disrupted"
+    assert domains["late"]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -177,9 +177,9 @@ def test_alternative_start_search_happens_after_splicing(strand):
     result, domains = annotate(reference, genomic(7), "C")
     assert start_prediction(result) == "alternative_start_found"
     assert result["frame_status"] == "in_frame"
-    assert domains["middle"]["splicing_based_status"] == "preserved"
-    assert domains["middle"]["fusion_sequence_status"] == "translation_start_disrupted"
-    assert domains["late"]["fusion_sequence_status"] == "preserved"
+    assert domains["middle"]["post_splicing_status"] == "preserved"
+    assert domains["middle"]["post_translation_status"] == "translation_start_disrupted"
+    assert domains["late"]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -191,7 +191,7 @@ def test_first_atg_is_used_even_when_later_atg_would_preserve_frame(strand):
     result, domains = annotate(reference, genomic(7), "C")
     assert start_prediction(result) == "alternative_start_found"
     assert result["frame_status"] == "out_of_frame"
-    assert all(d["fusion_sequence_status"] == "frame_disrupted" for d in domains.values())
+    assert all(d["post_translation_status"] == "frame_disrupted" for d in domains.values())
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -202,9 +202,9 @@ def test_no_remaining_atg_excludes_translation_of_retained_domains(strand):
     assert "alternative_start_used" not in result
     assert start_prediction(result) == "alternative_start_not_found"
     assert all(d["breakpoint_based_status"] == "included" for d in domains.values())
-    assert all(d["splicing_based_status"] == "preserved" for d in domains.values())
+    assert all(d["post_splicing_status"] == "preserved" for d in domains.values())
     assert all(
-        d["fusion_sequence_status"] == "translation_start_excluded" for d in domains.values()
+        d["post_translation_status"] == "translation_start_excluded" for d in domains.values()
     )
 
 
@@ -218,7 +218,7 @@ def test_next_start_after_all_domains_excludes_them(strand):
     assert result["frame_status"] == "in_frame"
     assert start_prediction(result) == "alternative_start_found"
     assert all(
-        d["fusion_sequence_status"] == "translation_start_excluded" for d in domains.values()
+        d["post_translation_status"] == "translation_start_excluded" for d in domains.values()
     )
 
 
@@ -232,9 +232,9 @@ def test_stop_after_alternative_start_excludes_downstream_domains(strand):
     assert start_prediction(result) == "alternative_start_found"
     assert result["frame_status"] == "in_frame"
     assert domains["early"]["breakpoint_based_status"] == "excluded"
-    assert domains["early"]["fusion_sequence_status"] is None
-    assert domains["middle"]["fusion_sequence_status"] == "premature_termination_excluded"
-    assert domains["late"]["fusion_sequence_status"] == "premature_termination_excluded"
+    assert domains["early"]["post_translation_status"] is None
+    assert domains["middle"]["post_translation_status"] == "premature_termination_excluded"
+    assert domains["late"]["post_translation_status"] == "premature_termination_excluded"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -258,9 +258,9 @@ def test_n_terminal_lost_start_uses_alternative_start(strand):
     result, domains = annotate(reference, genomic(reference.transcript["premrna_length"]), "N")
     assert result["frame_status"] == "in_frame"
     assert start_prediction(result) == "alternative_start_found"
-    assert domains["early"]["fusion_sequence_status"] == "translation_start_excluded"
-    assert domains["middle"]["fusion_sequence_status"] == "translation_start_disrupted"
-    assert domains["late"]["fusion_sequence_status"] == "preserved"
+    assert domains["early"]["post_translation_status"] == "translation_start_excluded"
+    assert domains["middle"]["post_translation_status"] == "translation_start_disrupted"
+    assert domains["late"]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -272,7 +272,7 @@ def test_n_terminal_lost_start_reports_unsuccessful_search(strand):
     assert start_prediction(result) == "alternative_start_not_found"
     assert result["frame_status"] is None
     assert all(
-        d["fusion_sequence_status"] == "translation_start_excluded" for d in domains.values()
+        d["post_translation_status"] == "translation_start_excluded" for d in domains.values()
     )
 
 
@@ -286,7 +286,7 @@ def test_n_terminal_alternative_start_checks_frame(strand):
     result, domains = annotate(reference, genomic(reference.transcript["premrna_length"]), "N")
     assert start_prediction(result) == "alternative_start_found"
     assert result["frame_status"] == "out_of_frame"
-    assert all(d["fusion_sequence_status"] == "frame_disrupted" for d in domains.values())
+    assert all(d["post_translation_status"] == "frame_disrupted" for d in domains.values())
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -342,9 +342,9 @@ def test_paired_fusion_with_lost_native_start_uses_alternative(strand, termini):
     assert start_prediction(result) == "alternative_start_found"
     assert result["frame_status"] == "in_frame"
     domains = {domain["name"]: domain for domain in result["domains"]}
-    assert domains["early"]["fusion_sequence_status"] == "translation_start_excluded"
-    assert domains["middle"]["fusion_sequence_status"] == "translation_start_disrupted"
-    assert domains["late"]["fusion_sequence_status"] == "preserved"
+    assert domains["early"]["post_translation_status"] == "translation_start_excluded"
+    assert domains["middle"]["post_translation_status"] == "translation_start_disrupted"
+    assert domains["late"]["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -379,7 +379,7 @@ def test_different_transcript_partners_search_when_both_native_starts_are_lost(s
     (late,) = [
         d for d in result["domains"] if d["transcript_id"] == c_transcript and d["name"] == "late"
     ]
-    assert late["fusion_sequence_status"] == "preserved"
+    assert late["post_translation_status"] == "preserved"
 
 
 @pytest.mark.parametrize("strand", [1, -1])
@@ -401,7 +401,7 @@ def test_paired_fusion_searches_across_the_final_junction(strand, with_start):
     )
     assert result["frame_status"] == ("in_frame" if with_start else "out_of_frame")
     (late,) = [domain for domain in result["domains"] if domain["name"] == "late"]
-    assert late["fusion_sequence_status"] == (
+    assert late["post_translation_status"] == (
         "preserved" if with_start else "translation_start_excluded"
     )
 

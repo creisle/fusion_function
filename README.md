@@ -1,6 +1,6 @@
 # fusion_function
 
-![Coverage](./badges/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/creisle/fusion_function/badges/badges/main/coverage.svg)
 
 Predict fusion reading frames and retained, disrupted, or excluded functional protein features from human GRCh38 transcript breakpoints. Annotation uses a preprocessed local SQLite reference and makes no network requests. Preparation uses tqdm progress bars.
 
@@ -109,7 +109,7 @@ Without a local build, the full-reference tests are skipped. To run only the lig
 - [Methodology](docs/methodology.md)
 - [Testing](docs/testing.md)
 
-## Citation
+## MAVIS
 
 This package ports and extends selected fusion-annotation logic from [MAVIS](https://github.com/bcgsc/mavis). Please cite:
 

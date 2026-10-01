@@ -20,8 +20,8 @@ FusionSideName = Literal["transcript1", "transcript2"]
 FusionTerminus = Literal["N", "C"]
 SpliceSiteType = Literal["donor", "acceptor"]
 BreakpointBasedStatus = Literal["included", "disrupted", "excluded"]
-SplicingBasedStatus = Literal["preserved", "lost"]
-FusionSequenceStatus = Literal[
+PostSplicingStatus = Literal["preserved", "lost"]
+PostTranslationStatus = Literal[
     "preserved",
     "frame_disrupted",
     "translation_start_disrupted",
@@ -129,16 +129,16 @@ class FusionLayout(TypedDict):
 
 
 class FeatureProductPrediction(TypedDict):
-    splicing_based_status: SplicingBasedStatus
-    fusion_sequence_status: FusionSequenceStatus | None
+    post_splicing_status: PostSplicingStatus
+    post_translation_status: PostTranslationStatus | None
 
 
 class AnnotatedProteinFeature(ProteinFeature):
     transcript_id: str
     breakpoint_based_status: BreakpointBasedStatus
     breakpoint_retained_percent: float
-    splicing_based_status: str | None
-    fusion_sequence_status: str | None
+    post_splicing_status: str | None
+    post_translation_status: str | None
 
 
 class ResolvedAnnotatedProteinFeature(AnnotatedProteinFeature):
@@ -158,8 +158,8 @@ class AggregatedDomain(TypedDict):
     end: int
     breakpoint_based_status: str
     breakpoint_retained_percent: float
-    splicing_based_status: str | None
-    fusion_sequence_status: str | None
+    post_splicing_status: str | None
+    post_translation_status: str | None
 
 
 class FunctionalDomain(TypedDict):
@@ -171,8 +171,8 @@ class FunctionalDomain(TypedDict):
     end: int
     breakpoint_based_status: str
     breakpoint_retained_percent: float
-    splicing_based_status: str | None
-    fusion_sequence_status: str | None
+    post_splicing_status: str | None
+    post_translation_status: str | None
 
 
 class FusionDomainResult(TypedDict):
@@ -562,10 +562,10 @@ def _classify_feature(
         )
         < feature["cds_end"] - feature["cds_start"] + 1
     ):
-        return {"splicing_based_status": "lost", "fusion_sequence_status": None}
+        return {"post_splicing_status": "lost", "post_translation_status": None}
     translation_start = splice_product["translation_start"]
     if translation_start is None:
-        status: FusionSequenceStatus = (
+        status: PostTranslationStatus = (
             "translation_start_excluded"
             if splice_product.get("translation_start_source") == "not_found"
             else "frame_disrupted"
@@ -607,7 +607,7 @@ def _classify_feature(
             status = "translation_start_disrupted"
         else:
             status = "preserved"
-    return {"splicing_based_status": "preserved", "fusion_sequence_status": status}
+    return {"post_splicing_status": "preserved", "post_translation_status": status}
 
 
 def _combine_statuses(statuses: list[str | None], order: tuple[str, ...]) -> str | None:
@@ -646,10 +646,10 @@ def _annotate_feature_statuses(
                 for splice_product in splice_products
             ]
             splicing_status = _combine_statuses(
-                [x["splicing_based_status"] for x in predictions], ("preserved", "lost")
+                [x["post_splicing_status"] for x in predictions], ("preserved", "lost")
             )
             sequence_status = _combine_statuses(
-                [x["fusion_sequence_status"] for x in predictions],
+                [x["post_translation_status"] for x in predictions],
                 (
                     "preserved",
                     "frame_disrupted",
@@ -668,8 +668,8 @@ def _annotate_feature_statuses(
                 "transcript_id": side["transcript_id"],
                 "breakpoint_based_status": breakpoint_status,
                 "breakpoint_retained_percent": round(100 * covered / feature_length, 1),
-                "splicing_based_status": splicing_status,
-                "fusion_sequence_status": sequence_status,
+                "post_splicing_status": splicing_status,
+                "post_translation_status": sequence_status,
             }
         )
     return annotated
@@ -748,11 +748,11 @@ def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) ->
         "breakpoint_retained_percent": max(
             feature["breakpoint_retained_percent"] for feature in features
         ),
-        "splicing_based_status": _combine_statuses(
-            [feature["splicing_based_status"] for feature in features], ("preserved", "lost")
+        "post_splicing_status": _combine_statuses(
+            [feature["post_splicing_status"] for feature in features], ("preserved", "lost")
         ),
-        "fusion_sequence_status": _combine_statuses(
-            [feature["fusion_sequence_status"] for feature in features],
+        "post_translation_status": _combine_statuses(
+            [feature["post_translation_status"] for feature in features],
             (
                 "preserved",
                 "frame_disrupted",
@@ -882,11 +882,11 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
                         ),
                     ),
                     "breakpoint_retained_percent": representative["breakpoint_retained_percent"],
-                    "splicing_based_status": _combine_statuses(
-                        [x["splicing_based_status"] for x in group], ("preserved", "lost")
+                    "post_splicing_status": _combine_statuses(
+                        [x["post_splicing_status"] for x in group], ("preserved", "lost")
                     ),
-                    "fusion_sequence_status": _combine_statuses(
-                        [x["fusion_sequence_status"] for x in group],
+                    "post_translation_status": _combine_statuses(
+                        [x["post_translation_status"] for x in group],
                         (
                             "preserved",
                             "frame_disrupted",

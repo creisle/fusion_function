@@ -187,8 +187,8 @@ Each functional feature contains:
     "end": int,
     "breakpoint_based_status": str,
     "breakpoint_retained_percent": float,
-    "splicing_based_status": str | None,
-    "fusion_sequence_status": str | None,
+    "post_splicing_status": str | None,
+    "post_translation_status": str | None,
 }
 ```
 
@@ -217,7 +217,7 @@ Percentage of the annotated feature retained directly by the breakpoint.
 
 This reflects genomic retention before considering fusion splicing or translation.
 
-#### `splicing_based_status`
+#### `post_splicing_status`
 
 | Value | Meaning |
 |---|---|
@@ -231,7 +231,7 @@ These checks apply to both `included` and `disrupted` features. For a disrupted
 feature, downstream `preserved` describes only the retained portion; the original
 domain remains disrupted. Completely excluded features have no downstream status.
 
-#### `fusion_sequence_status`
+#### `post_translation_status`
 
 | Value | Meaning |
 |---|---|
