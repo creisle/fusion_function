@@ -41,6 +41,12 @@ class GenomicSegment(TypedDict):
     assembly_name: str | None
 
 
+class FeatureEvidence(TypedDict):
+    code: str
+    source: NotRequired[str]
+    id: NotRequired[str]
+
+
 class ProteinFeature(TypedDict):
     feature_id: str | None
     source: str | None
@@ -60,6 +66,36 @@ class ProteinFeature(TypedDict):
     interpro_name: NotRequired[str | None]
     interpro_entry_type: NotRequired[str | None]
     genomic_segments: NotRequired[list[GenomicSegment]]
+    feature_type: NotRequired[str]
+    uniprot_accession: NotRequired[str]
+    uniprot_isoform: NotRequired[str]
+    evidence: NotRequired[list[FeatureEvidence]]
+
+
+def feature_identity(feature: ProteinFeature) -> tuple[object, ...]:
+    """Collapse only identical feature intervals, never overlapping boundaries.
+
+    Integrated signatures may share an InterPro ID and exact interval. Features
+    without one need their source, accession and description to distinguish, for
+    example, different ligand-binding annotations at the same residue.
+    """
+    identity = (
+        (feature["interpro_id"],)
+        if feature["interpro_id"]
+        else (
+            feature["source"],
+            feature["feature_id"],
+            feature["description"],
+            feature.get("uniprot_accession"),
+            feature.get("uniprot_isoform"),
+        )
+    )
+    return (
+        *identity,
+        feature["start"],
+        feature["end"],
+        feature.get("feature_type") or feature.get("interpro_entry_type"),
+    )
 
 
 class ReferenceSpliceSite(TypedDict):

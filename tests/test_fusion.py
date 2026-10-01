@@ -168,11 +168,11 @@ def test_finalize_domains_filters_irrelevant_entry_types() -> None:
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 1
-
-    assert result[0]["interpro_id"] == "IPR000719"
-
-    assert result[0]["domain_type"] == "domain"
+    assert {feature["domain_type"] for feature in result} == {
+        "domain",
+        "family",
+        "homologous_superfamily",
+    }
 
 
 def test_finalize_domains_keeps_functionally_relevant_sites() -> None:
@@ -297,7 +297,7 @@ def test_finalize_domains_does_not_merge_sites_with_parent_domain() -> None:
     }
 
 
-def test_finalize_domains_collapses_redundant_overlapping_domains() -> None:
+def test_finalize_domains_keeps_distinct_overlapping_annotations() -> None:
 
     domains: list[AggregatedDomain] = [
         {
@@ -343,14 +343,14 @@ def test_finalize_domains_collapses_redundant_overlapping_domains() -> None:
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 1
+    assert len(result) == 3
 
     assert result[0]["domain_type"] == "domain"
 
     assert result[0]["interpro_id"] in {"IPR000719", "IPR020635", "IPR001245"}
 
 
-def test_finalize_domains_merges_unresolved_domain_annotation() -> None:
+def test_finalize_domains_keeps_unresolved_domain_boundaries() -> None:
 
     domains: list[AggregatedDomain] = [
         {
@@ -383,12 +383,12 @@ def test_finalize_domains_merges_unresolved_domain_annotation() -> None:
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 1
+    assert len(result) == 2
 
-    assert result[0]["interpro_id"] == "IPR000719"
+    assert {feature["interpro_id"] for feature in result} == {"IPR000719", None}
 
 
-def test_finalize_domains_collapses_short_member_annotations() -> None:
+def test_finalize_domains_keeps_short_member_boundaries() -> None:
 
     domains: list[AggregatedDomain] = [
         {
@@ -421,7 +421,7 @@ def test_finalize_domains_collapses_short_member_annotations() -> None:
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 1
+    assert len(result) == 2
 
 
 def test_finalize_domains_keeps_separate_domain_occurrences() -> None:
@@ -506,7 +506,7 @@ def test_finalize_domains_does_not_transitively_chain_domains() -> None:
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 2
+    assert len(result) == 3
 
 
 def test_finalize_domains_does_not_merge_different_feature_types() -> None:
@@ -563,7 +563,7 @@ def test_finalize_domains_combines_breakpoint_statuses() -> None:
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
-            "interpro_id": "IPR020635",
+            "interpro_id": "IPR000719",
             "name": "Tyrosine-protein kinase, catalytic domain",
             "domain_type": "domain",
             "sources": ["Pfam"],
@@ -601,7 +601,7 @@ def test_finalize_domains_combines_splicing_statuses() -> None:
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
-            "interpro_id": "IPR020635",
+            "interpro_id": "IPR000719",
             "name": "Tyrosine-protein kinase, catalytic domain",
             "domain_type": "domain",
             "sources": ["Pfam"],
@@ -639,7 +639,7 @@ def test_finalize_domains_combines_sequence_statuses() -> None:
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
-            "interpro_id": "IPR020635",
+            "interpro_id": "IPR000719",
             "name": "Tyrosine-protein kinase, catalytic domain",
             "domain_type": "domain",
             "sources": ["Pfam"],
@@ -677,7 +677,7 @@ def test_finalize_domains_deduplicates_existing_slash_statuses() -> None:
         },
         {
             "transcript_id": GENE2TRANSCRIPT["ABL1"],
-            "interpro_id": "IPR020635",
+            "interpro_id": "IPR000719",
             "name": "Tyrosine-protein kinase, catalytic domain",
             "domain_type": "domain",
             "sources": ["Pfam"],
@@ -695,7 +695,7 @@ def test_finalize_domains_deduplicates_existing_slash_statuses() -> None:
     assert result[0]["post_translation_status"] == "preserved/frame_disrupted"
 
 
-def test_finalize_domains_prefers_domain_name_over_overlapping_specific_family() -> None:
+def test_finalize_domains_keeps_domain_and_family_types() -> None:
 
     domains: list[AggregatedDomain] = [
         {
@@ -729,11 +729,14 @@ def test_finalize_domains_prefers_domain_name_over_overlapping_specific_family()
 
     result = _finalize_domains(domains)
 
-    assert len(result) == 1
+    assert len(result) == 2
 
-    assert result[0]["domain_type"] == "domain"
+    assert {feature["domain_type"] for feature in result} == {"domain", "family"}
 
-    assert result[0]["name"] == "CoA-transferase family III"
+    assert {feature["name"] for feature in result} == {
+        "CoA-transferase family III",
+        "ALPHA-METHYLACYL-COA RACEMASE",
+    }
 
 
 def test_finalize_domains_keeps_specific_family_when_no_domain_entry_exists() -> None:
@@ -759,7 +762,7 @@ def test_finalize_domains_keeps_specific_family_when_no_domain_entry_exists() ->
 
     assert len(result) == 1
 
-    assert result[0]["domain_type"] == "domain"
+    assert result[0]["domain_type"] == "family"
 
     assert result[0]["name"] == "ALPHA-METHYLACYL-COA RACEMASE"
 
@@ -792,6 +795,8 @@ def test_final_domain_schema_is_concise() -> None:
         "interpro_id",
         "name",
         "domain_type",
+        "sources",
+        "feature_ids",
         "start",
         "end",
         "breakpoint_based_status",
@@ -800,7 +805,7 @@ def test_final_domain_schema_is_concise() -> None:
         "post_translation_status",
     }
 
-    assert "sources" not in result[0]
+    assert result[0]["sources"] == ["Pfam"]
 
     assert "domain_id" not in result[0]
 
@@ -1012,11 +1017,13 @@ def test_bcr_exon14_abl1_exon2_public_domain_schema(reference_db: ReferenceDatab
 
     assert all(
         set(feature)
-        == {
+        >= {
             "transcript_id",
             "interpro_id",
             "name",
             "domain_type",
+            "sources",
+            "feature_ids",
             "start",
             "end",
             "breakpoint_based_status",
@@ -1028,7 +1035,16 @@ def test_bcr_exon14_abl1_exon2_public_domain_schema(reference_db: ReferenceDatab
     )
 
     assert all(
-        feature["domain_type"] in {"domain", "binding_site", "active_site", "conserved_site"}
+        feature["domain_type"]
+        in {
+            "domain",
+            "family",
+            "homologous_superfamily",
+            "binding_site",
+            "active_site",
+            "conserved_site",
+            "motif",
+        }
         for feature in result["domains"]
     )
 

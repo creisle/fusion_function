@@ -7,7 +7,7 @@ import pytest
 
 from fusion_function import annotate_fusion_domains, data
 from fusion_function.reference import ReferenceDatabase
-from .preprocessing_fixture import fixture
+from .preprocessing_fixture import fixture, uniprot_file
 
 
 AMACR_ROW = (
@@ -71,7 +71,7 @@ def test_bulk_subfamily_restores_missing_domain_without_changing_coordinates(tmp
         ).fetchone()[0]
     )
     assert before["protein_features"][0]["source"] == "PANTHER"
-    assert fusion(path)["domains"] == []
+    assert all(feature["domain_type"] == "family" for feature in fusion(path)["domains"])
     data.preprocess_reference(db, entries, panther_classifications=classifications)
     after = json.loads(
         db.execute(
@@ -93,7 +93,8 @@ def test_bulk_subfamily_restores_missing_domain_without_changing_coordinates(tmp
     )
     assert other["protein_features"][0]["panther_subfamily_id"] is None
     domains = fusion(path)["domains"]
-    assert len(domains) == 1
+    assert len(domains) == 4
+    assert all(feature["domain_type"] == "family" for feature in domains)
     assert domains[0]["name"] == "ALPHA-METHYLACYL-COA RACEMASE"
     assert domains[0]["transcript_id"] == "ENST00000000001"
     db.close()
@@ -268,7 +269,7 @@ def test_unmatched_or_ambiguous_assignments_are_not_propagated(tmp_path, mismatc
         )
     db.commit()
     data.preprocess_reference(db, entries, panther_classifications=classifications)
-    assert fusion(path)["domains"] == []
+    assert all(feature["domain_type"] == "family" for feature in fusion(path)["domains"])
     db.close()
 
 
@@ -299,6 +300,8 @@ def test_cli_can_reprocess_with_local_bulk_metadata(tmp_path):
                 str(entries),
                 "--panther-classifications",
                 str(classifications),
+                "--uniprot-features",
+                str(uniprot_file(tmp_path)),
             ]
         )
         == 0

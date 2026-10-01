@@ -7,4 +7,4 @@ __pycache__
 .VSCodeCounter
 .ruff_cache
 fusion_function.tar.gz
-fusion_function_updated.tar.gz
+fusion_function_*.tar.gz

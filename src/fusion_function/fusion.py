@@ -10,6 +10,8 @@ from .reference import ReferenceDatabase, get_reference
 from .ensembl import (
     EnsemblError,
     ProteinFeature,
+    FeatureEvidence,
+    feature_identity,
     Strand,
     TranscriptProteinFeatureResult,
     get_protein_domains,
@@ -154,6 +156,10 @@ class AggregatedDomain(TypedDict):
     specific_name: NotRequired[str | None]
     domain_type: str | None
     sources: list[str]
+    feature_ids: NotRequired[list[str]]
+    uniprot_accessions: NotRequired[list[str]]
+    uniprot_isoforms: NotRequired[list[str]]
+    evidence: NotRequired[list[FeatureEvidence]]
     start: int
     end: int
     breakpoint_based_status: str
@@ -163,6 +169,11 @@ class AggregatedDomain(TypedDict):
 
 
 class FunctionalDomain(TypedDict):
+    sources: list[str]
+    feature_ids: list[str]
+    uniprot_accessions: NotRequired[list[str]]
+    uniprot_isoforms: NotRequired[list[str]]
+    evidence: NotRequired[list[FeatureEvidence]]
     transcript_id: str
     interpro_id: str | None
     name: str
@@ -183,7 +194,15 @@ class FusionDomainResult(TypedDict):
 
 
 STOP_CODONS = {"TAA", "TAG", "TGA"}
-RELEVANT_ENTRY_TYPES = {"domain", "binding_site", "active_site", "conserved_site"}
+RELEVANT_ENTRY_TYPES = {
+    "family",
+    "domain",
+    "homologous_superfamily",
+    "binding_site",
+    "active_site",
+    "conserved_site",
+    "motif",
+}
 
 
 def _parse_breakpoint(breakpoint: str) -> tuple[str, int]:
@@ -681,7 +700,7 @@ def _resolve_feature_metadata(
     """Use metadata already resolved during preprocessing."""
     resolved: list[ResolvedAnnotatedProteinFeature] = []
     for feature in features:
-        entry_type = feature.get("interpro_entry_type")
+        entry_type = feature.get("feature_type") or feature.get("interpro_entry_type")
         if feature["interpro_id"] and entry_type is None:
             raise ValueError(
                 f"Missing InterPro entry type for {feature['interpro_id']}. "
@@ -705,7 +724,7 @@ def _overlap(start1: int, end1: int, start2: int, end2: int) -> int:
 
 
 def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) -> AggregatedDomain:
-    """Aggregate feature records representing one InterPro occurrence."""
+    """Combine identical intervals; keep alternative-product statuses together."""
     interpro_id = next(
         (
             feature["resolved_interpro_id"]
@@ -714,7 +733,7 @@ def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) ->
         ),
         None,
     )
-    return {
+    result: AggregatedDomain = {
         "transcript_id": features[0]["transcript_id"],
         "interpro_id": interpro_id,
         "name": next(
@@ -736,8 +755,15 @@ def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) ->
         "sources": sorted(
             {feature["source"] for feature in features if feature["source"] is not None}
         ),
-        "start": min(feature["start"] for feature in features),
-        "end": max(feature["end"] for feature in features),
+        "feature_ids": sorted(
+            {
+                cast(str, feature.get("panther_subfamily_id") or feature["feature_id"])
+                for feature in features
+                if feature.get("panther_subfamily_id") or feature["feature_id"]
+            }
+        ),
+        "start": features[0]["start"],
+        "end": features[0]["end"],
         "breakpoint_based_status": cast(
             str,
             _combine_statuses(
@@ -764,143 +790,114 @@ def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) ->
         ),
     }
 
-
-def _same_functional_feature(feature1: AggregatedDomain, feature2: AggregatedDomain) -> bool:
-    """Determine whether two annotations represent one functional feature."""
-    if (
-        feature1["transcript_id"] != feature2["transcript_id"]
-        or feature1["domain_type"] != feature2["domain_type"]
-    ):
-        return False
-    overlap = _overlap(feature1["start"], feature1["end"], feature2["start"], feature2["end"])
-    if overlap == 0:
-        return False
-    length1 = feature1["end"] - feature1["start"] + 1
-    length2 = feature2["end"] - feature2["start"] + 1
-    if (feature1["interpro_id"] is None) != (feature2["interpro_id"] is None):
-        unresolved_length = length1 if feature1["interpro_id"] is None else length2
-        return overlap / unresolved_length >= 0.7
-    return min(overlap / length1, overlap / length2) >= 0.7
+    accessions = sorted(
+        {feature["uniprot_accession"] for feature in features if "uniprot_accession" in feature}
+    )
+    isoforms = sorted(
+        {feature["uniprot_isoform"] for feature in features if "uniprot_isoform" in feature}
+    )
+    if accessions:
+        result["uniprot_accessions"] = accessions
+    if isoforms:
+        result["uniprot_isoforms"] = isoforms
+    evidence = {
+        tuple(sorted(item.items())) for feature in features for item in feature.get("evidence", [])
+    }
+    if any("evidence" in feature for feature in features):
+        result["evidence"] = [cast(FeatureEvidence, dict(item)) for item in sorted(evidence)]
+    return result
 
 
 def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]:
-    """Filter and collapse redundant functional protein annotations."""
+    """Expose functional features with their true types, bounds and provenance.
 
-    # Non-functional annotations with a useful protein/family-specific name.
-    # These are retained only as fallbacks when no real functional InterPro
-    # feature represents the same region.
-    specific_annotations = [
-        domain
-        for domain in domains
-        if domain.get("specific_name") and domain["domain_type"] not in RELEVANT_ENTRY_TYPES
-    ]
-
-    retained_domains = [
-        cast(AggregatedDomain, dict(domain))
-        for domain in domains
-        if domain["domain_type"] in RELEVANT_ENTRY_TYPES
-    ]
-
-    # Suppress specific family annotations that are already represented by
-    # a real InterPro domain. Do NOT copy specific_name onto the domain:
-    # the canonical InterPro name should remain the functional feature name.
-    represented_specific_annotations: set[int] = set()
-
-    for domain in retained_domains:
-        if domain["domain_type"] != "domain":
-            continue
-
-        domain_length = domain["end"] - domain["start"] + 1
-
-        for index, annotation in enumerate(specific_annotations):
-            if annotation["transcript_id"] != domain["transcript_id"]:
-                continue
-
-            overlap = _overlap(
-                domain["start"], domain["end"], annotation["start"], annotation["end"]
-            )
-            annotation_length = annotation["end"] - annotation["start"] + 1
-
-            if overlap / min(domain_length, annotation_length) >= 0.7:
-                represented_specific_annotations.add(index)
-
-    # If a specific family annotation is not represented by an actual
-    # functional feature, retain it as a fallback domain. In this case the
-    # specific_name is useful because there is no canonical domain name.
-    for index, annotation in enumerate(specific_annotations):
-        if index in represented_specific_annotations:
-            continue
-
-        retained_domains.append(
-            {**annotation, "name": cast(str, annotation["specific_name"]), "domain_type": "domain"}
+    Exact reference duplicates are grouped before this step. Overlap alone does
+    not imply equivalence: signatures can disagree on boundaries, and distinct
+    active/binding sites can occupy the same residues.
+    """
+    unique: dict[tuple[object, ...], AggregatedDomain] = {}
+    for feature in domains:
+        identity = feature["interpro_id"] or (
+            tuple(feature["sources"]),
+            tuple(feature.get("feature_ids", [])),
+            feature["name"],
         )
-
-    buckets: dict[tuple[str, str], list[AggregatedDomain]] = {}
-
-    for domain in retained_domains:
-        buckets.setdefault((domain["transcript_id"], cast(str, domain["domain_type"])), []).append(
-            domain
+        key = (
+            feature["transcript_id"],
+            identity,
+            feature["domain_type"],
+            feature["start"],
+            feature["end"],
         )
-
+        if key not in unique:
+            unique[key] = cast(AggregatedDomain, dict(feature))
+            continue
+        previous = unique[key]
+        previous["sources"] = sorted(set(previous["sources"] + feature["sources"]))
+        previous["feature_ids"] = sorted(
+            set(previous.get("feature_ids", []) + feature.get("feature_ids", []))
+        )
+        previous["breakpoint_based_status"] = cast(
+            str,
+            _combine_statuses(
+                [previous["breakpoint_based_status"], feature["breakpoint_based_status"]],
+                ("included", "disrupted", "excluded"),
+            ),
+        )
+        previous["post_splicing_status"] = _combine_statuses(
+            [previous["post_splicing_status"], feature["post_splicing_status"]],
+            ("preserved", "lost"),
+        )
+        previous["post_translation_status"] = _combine_statuses(
+            [previous["post_translation_status"], feature["post_translation_status"]],
+            (
+                "preserved",
+                "frame_disrupted",
+                "translation_start_disrupted",
+                "translation_start_excluded",
+                "premature_termination_disrupted",
+                "premature_termination_excluded",
+            ),
+        )
     final: list[FunctionalDomain] = []
-
-    for bucket in buckets.values():
-        groups: list[list[AggregatedDomain]] = []
-
-        for domain in sorted(
-            bucket,
-            key=lambda x: (x["interpro_id"] is not None, len(x["sources"]), x["end"] - x["start"]),
-            reverse=True,
-        ):
-            for group in groups:
-                if _same_functional_feature(domain, group[0]):
-                    group.append(domain)
-                    break
-            else:
-                groups.append([domain])
-
-        for group in groups:
-            representative = group[0]
-
-            final.append(
-                {
-                    "transcript_id": representative["transcript_id"],
-                    "interpro_id": representative["interpro_id"],
-                    "name": (
-                        representative["name"]
-                        or representative["interpro_id"]
-                        or "Unnamed functional feature"
-                    ),
-                    "domain_type": cast(str, representative["domain_type"]),
-                    "start": representative["start"],
-                    "end": representative["end"],
-                    "breakpoint_based_status": cast(
-                        str,
-                        _combine_statuses(
-                            [x["breakpoint_based_status"] for x in group],
-                            ("included", "disrupted", "excluded"),
-                        ),
-                    ),
-                    "breakpoint_retained_percent": representative["breakpoint_retained_percent"],
-                    "post_splicing_status": _combine_statuses(
-                        [x["post_splicing_status"] for x in group], ("preserved", "lost")
-                    ),
-                    "post_translation_status": _combine_statuses(
-                        [x["post_translation_status"] for x in group],
-                        (
-                            "preserved",
-                            "frame_disrupted",
-                            "translation_start_disrupted",
-                            "translation_start_excluded",
-                            "premature_termination_disrupted",
-                            "premature_termination_excluded",
-                        ),
-                    ),
-                }
-            )
-
+    for feature in unique.values():
+        if feature["domain_type"] not in RELEVANT_ENTRY_TYPES:
+            continue
+        name = feature["name"] or feature["interpro_id"] or "Unnamed functional feature"
+        if feature["domain_type"] == "family" and feature.get("specific_name"):
+            name = cast(str, feature["specific_name"])
+        public: FunctionalDomain = {
+            "transcript_id": feature["transcript_id"],
+            "interpro_id": feature["interpro_id"],
+            "name": name,
+            "domain_type": cast(str, feature["domain_type"]),
+            "start": feature["start"],
+            "end": feature["end"],
+            "sources": feature["sources"],
+            "feature_ids": feature.get("feature_ids", []),
+            "breakpoint_based_status": feature["breakpoint_based_status"],
+            "breakpoint_retained_percent": feature["breakpoint_retained_percent"],
+            "post_splicing_status": feature["post_splicing_status"],
+            "post_translation_status": feature["post_translation_status"],
+        }
+        if "uniprot_accessions" in feature:
+            public["uniprot_accessions"] = feature["uniprot_accessions"]
+        if "uniprot_isoforms" in feature:
+            public["uniprot_isoforms"] = feature["uniprot_isoforms"]
+        if "evidence" in feature:
+            public["evidence"] = feature["evidence"]
+        final.append(public)
     return sorted(
-        final, key=lambda x: (x["transcript_id"], x["start"], x["end"], x["domain_type"], x["name"])
+        final,
+        key=lambda item: (
+            item["transcript_id"],
+            item["start"],
+            item["end"],
+            item["domain_type"],
+            item["name"],
+            item["sources"],
+            item["feature_ids"],
+        ),
     )
 
 
@@ -1019,18 +1016,16 @@ def annotate_fusion_domains(
             ]
             products_by_side[side["side"]] = products
             splice_products.extend(products)
-    # Group membership is reference-only and has already been computed.
-    # Merge matching groups when the same transcript is used on both sides.
-    grouped: dict[tuple[str, int], list[ResolvedAnnotatedProteinFeature]] = {}
+    # Older prepared databases contain overlap-based groups. Derive exact keys
+    # from their raw features too, so new boundaries/types work without a rebuild.
+    grouped: dict[tuple[object, ...], list[ResolvedAnnotatedProteinFeature]] = {}
     for side in sides:
-        transcript_id = side["transcript_id"]
         features = _resolve_feature_metadata(
             _annotate_feature_statuses(side, products_by_side[side["side"]])
         )
-        for group_index, indices in enumerate(transcripts[transcript_id]["feature_groups"]):
-            grouped.setdefault((transcript_id, group_index), []).extend(
-                features[index] for index in indices
-            )
+        for feature in features:
+            key = (side["transcript_id"], *feature_identity(feature))
+            grouped.setdefault(key, []).append(feature)
     domains = [_aggregate_feature_group(features) for features in grouped.values()]
     result: FusionDomainResult = {
         "frame_status": (
@@ -1056,9 +1051,9 @@ def annotate_fusion_domains(
         sides[0]["transcript_id"],
     )
     start_products: dict[str, list[SpliceProduct]] = {}
-    for product in splice_products:
-        transcript_id = product["start_transcript_id"] or default_start_transcript
-        start_products.setdefault(transcript_id, []).append(product)
+    for splice_product in splice_products:
+        transcript_id = splice_product["start_transcript_id"] or default_start_transcript
+        start_products.setdefault(transcript_id, []).append(splice_product)
     result["translation_start"] = {
         transcript_id: _summarize_translation_start(products)
         for transcript_id, products in start_products.items()

@@ -7,7 +7,7 @@ import threading
 import pytest
 
 from fusion_function import data
-from .preprocessing_fixture import fixture
+from .preprocessing_fixture import fixture, uniprot_file
 
 
 @pytest.fixture
@@ -229,17 +229,30 @@ def test_numbered_steps_label_bars_and_reset_on_error(bars, caplog):
     assert "[Step 2/2] Import inputs" in caplog.text
 
 
-def test_reprocess_only_has_three_numbered_steps(tmp_path, caplog):
+def test_reprocess_only_has_four_numbered_steps(tmp_path, caplog):
     path = tmp_path / "reference.sqlite"
     fixture(path).close()
     entries = tmp_path / "entry.list"
     entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
     with caplog.at_level(logging.INFO):
-        assert data.main(["--preprocess-only", str(path), "--interpro-entries", str(entries)]) == 0
+        assert (
+            data.main(
+                [
+                    "--preprocess-only",
+                    str(path),
+                    "--interpro-entries",
+                    str(entries),
+                    "--uniprot-features",
+                    str(uniprot_file(tmp_path)),
+                ]
+            )
+            == 0
+        )
     steps = [record.getMessage() for record in caplog.records if "[Step " in record.getMessage()]
     assert steps == [
-        "[Step 1/3] Validate existing reference database",
-        "[Step 2/3] Prepare InterPro metadata",
-        "[Step 3/3] Preprocess transcripts, domains and splice sites",
+        "[Step 1/4] Validate existing reference database",
+        "[Step 2/4] Prepare InterPro metadata",
+        "[Step 3/4] Prepare reviewed human UniProt features",
+        "[Step 4/4] Preprocess transcripts, domains and splice sites",
     ]
-    assert "Completed all 3 steps" in caplog.text
+    assert "Completed all 4 steps" in caplog.text

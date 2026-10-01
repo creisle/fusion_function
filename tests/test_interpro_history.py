@@ -5,7 +5,7 @@ import json
 import pytest
 
 from fusion_function import data
-from .preprocessing_fixture import fixture
+from .preprocessing_fixture import fixture, uniprot_file
 
 
 def entry_list(path, rows):
@@ -51,7 +51,19 @@ def test_archived_types_are_recovered_and_remain_available_offline(tmp_path, mon
     monkeypatch.setattr(
         data, "download", lambda *_: pytest.fail("Offline reprocessing downloaded metadata")
     )
-    assert data.main(["--preprocess-only", str(path), "--interpro-entries", str(current)]) == 0
+    assert (
+        data.main(
+            [
+                "--preprocess-only",
+                str(path),
+                "--interpro-entries",
+                str(current),
+                "--uniprot-features",
+                str(uniprot_file(tmp_path)),
+            ]
+        )
+        == 0
+    )
     with data.ReferenceReader(path) as reference:
         assert reference.get_interpro_annotation("IPR001423")["entry_type"] == "conserved_site"
         assert (

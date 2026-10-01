@@ -12,7 +12,8 @@ Set FUSION_FUNCTION_CACHEDIR or --cache-dir to change the cache root.
 Storage: ensembl_* tables preserve the FTP dump columns. DNA and peptides use
 independently compressed 1 MiB chunks. ff_transcripts stores prepared exon/CDS
 coordinates, splice windows and protein features; ff_interpro stores names and
-types. Coordinates are 1-based and inclusive; CDS blocks follow transcript
+types. ff_uniprot_features stores sequence-verified reviewed human sites,
+domains and motifs. Coordinates are 1-based and inclusive; CDS blocks follow transcript
 orientation, including on the negative strand. Pre-mRNA is reconstructed when
 requested, rather than stored for every transcript.
 
@@ -23,6 +24,9 @@ Archive checksums and source releases are recorded in build_metadata.
 Human PANTHER subfamily classifications are fetched for the version recorded
 by Ensembl, or supplied with --panther-classifications FILE. Protein cross-
 references enrich existing family hits; no domain coordinates are invented.
+Reviewed human UniProt XML is fetched during preparation only, or supplied with
+--uniprot-features FILE. Features require exact protein sequence identity and
+carry UniProt accessions, isoforms and evidence codes.
 
 New databases resume from <output>.building and are published only after
 integrity checking; --force permits replacement. Repeating the same build skips
@@ -62,6 +66,7 @@ from html.parser import HTMLParser
 from itertools import groupby
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self, TypedDict, cast, overload
+from xml.etree.ElementTree import ParseError
 
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
@@ -191,6 +196,8 @@ def file_label(path: Path) -> str:
     """Short labels keep progress output on one terminal line."""
     if path.name.endswith(".sql.gz"):
         return "core schema"
+    if path.name == "stream":
+        return "UniProt features"
     if path.name == "entry.list":
         return "InterPro"
     for kind in SEQUENCE_TYPES:
@@ -1007,42 +1014,13 @@ def protein_segments(
 
 
 def reference_feature_groups(features: Sequence[ProteinFeature]) -> list[list[int]]:
-    """Group redundant hits while keeping repeated InterPro occurrences separate.
+    """Group only identical intervals/identities; preserve source disagreements."""
+    from .ensembl import feature_identity
 
-    Returned indices refer to the unchanged feature list. Without an InterPro
-    accession, only exact source/accession/interval matches form a group.
-    """
-    exact: dict[tuple[str | None, str | None, int, int], list[int]] = {}
-    interpro: dict[str, list[int]] = {}
+    groups: dict[tuple[object, ...], list[int]] = {}
     for index, feature in enumerate(features):
-        if feature["interpro_id"]:
-            interpro.setdefault(feature["interpro_id"], []).append(index)
-        else:
-            key = feature["source"], feature["feature_id"], feature["start"], feature["end"]
-            exact.setdefault(key, []).append(index)
-    groups = list(exact.values())
-    for indices in interpro.values():
-        occurrences: list[list[int]] = []
-        # The longest hit anchors an occurrence. Compare against that anchor,
-        # rather than chaining overlaps that could join separate repeat copies.
-        for index in sorted(
-            indices, key=lambda i: features[i]["end"] - features[i]["start"], reverse=True
-        ):
-            feature = features[index]
-            length = feature["end"] - feature["start"] + 1
-            for occurrence in occurrences:
-                anchor = features[occurrence[0]]
-                overlap = max(
-                    0,
-                    min(feature["end"], anchor["end"]) - max(feature["start"], anchor["start"]) + 1,
-                )
-                if overlap / min(length, anchor["end"] - anchor["start"] + 1) >= 0.5:
-                    occurrence.append(index)
-                    break
-            else:
-                occurrences.append([index])
-        groups.extend(occurrences)
-    return groups
+        groups.setdefault(feature_identity(feature), []).append(index)
+    return list(groups.values())
 
 
 # Source compatibility checks and bulk protein annotation metadata.
@@ -1357,6 +1335,8 @@ def preprocess_reference(
     interpro_archive_cache: Path | None = None,
     panther_classifications: Path | None = None,
     panther_cache: Path | None = None,
+    uniprot_features: Path | None = None,
+    uniprot_source: dict[str, str] | None = None,
 ) -> dict[str, int]:
     """Build all derived tables in one transaction; leave prior tables on failure.
 
@@ -1364,6 +1344,8 @@ def preprocess_reference(
     transcript models are recorded as errors, rather than silently corrected.
     No nucleotide sequences are duplicated in the derived transcript records.
     """
+    from .uniprot import CuratedFeature, import_features
+
     metadata = validate_reference_source(db)
     analyses = protein_analyses(db)
     panther_source = None
@@ -1374,6 +1356,11 @@ def preprocess_reference(
                 version, panther_cache
             )
             panther_source = {"version": version, "url": url, "sha256": digest}
+    if uniprot_features is not None and uniprot_source is None:
+        uniprot_source = {
+            "path": str(uniprot_features.resolve()),
+            "sha256": sha256_file(uniprot_features),
+        }
     if panther_classifications is not None and panther_source is None:
         panther_source = {
             "path": str(panther_classifications.resolve()),
@@ -1386,6 +1373,16 @@ def preprocess_reference(
     db.execute("BEGIN IMMEDIATE")
     transcript_progress = None
     try:
+        if uniprot_features is not None:
+            uniprot_counts = import_features(db, uniprot_features)
+        else:
+            uniprot_counts = None
+        # An offline low-level call can reuse already verified UniProt lookups.
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS ff_uniprot_features (sequence_id TEXT NOT NULL, "
+            "feature_id TEXT NOT NULL, payload TEXT NOT NULL, "
+            "PRIMARY KEY(sequence_id, feature_id)) WITHOUT ROWID"
+        )
         # Persist the bulk lookup so subsequent offline preprocessing can reuse it.
         # Import and all derived changes participate in the same rollback boundary.
         db.execute(
@@ -1473,6 +1470,20 @@ def preprocess_reference(
                 "SELECT stable_id, sequence_id, length FROM sequences WHERE kind='pep'"
             ):
                 protein_lengths.setdefault(stable_id, []).append((sequence_id, length))
+        curated_features = GroupStream(
+            dict_rows(
+                db,
+                """
+            SELECT t.transcript_id, u.payload
+            FROM ensembl_transcript t JOIN ensembl_translation tr
+              ON tr.translation_id=t.canonical_translation_id
+            JOIN ff_uniprot_features u ON u.sequence_id IN
+              (tr.stable_id, tr.stable_id || '.' || tr.version)
+            WHERE t.is_current=1 ORDER BY t.transcript_id, u.feature_id
+        """,
+                description="Prepare ordered UniProt feature stream",
+            )
+        )
         # All three queries use the same ascending internal ID order. GroupStream
         # avoids per-transcript SQL queries and loading all exon/features into RAM.
         exons = GroupStream(
@@ -1546,6 +1557,7 @@ def preprocess_reference(
         for number, transcript in enumerate(transcript_progress, 1):
             exon_rows = exons.take(transcript["internal_id"])
             feature_rows = features.take(transcript["internal_id"])
+            curated_rows = curated_features.take(transcript["internal_id"])
             translation = None
             if transcript["canonical_translation_id"] is not None:
                 translation = {**transcript, "stable_id": transcript["translation_id"]}
@@ -1649,6 +1661,40 @@ def preprocess_reference(
                                 "panther_subfamily_description": subfamily_name,
                             }
                         )
+                    for curated_row in curated_rows:
+                        curated = cast(CuratedFeature, json.loads(curated_row["payload"]))
+                        start, end = curated["start"], curated["end"]
+                        if not 1 <= start <= end <= protein_length:
+                            raise ValueError("Verified UniProt feature falls outside peptide")
+                        segments = protein_segments(
+                            start, end, payload["cds_blocks"], block_ends=block_ends
+                        )
+                        payload["protein_features"].append(
+                            {
+                                "feature_id": curated["feature_id"],
+                                "feature_type": curated["feature_type"],
+                                "description": curated["description"],
+                                "start": start,
+                                "end": end,
+                                "uniprot_accession": curated["uniprot_accession"],
+                                "uniprot_isoform": curated["uniprot_isoform"],
+                                "evidence": curated["evidence"],
+                                "source": "UniProtKB",
+                                "interpro_id": None,
+                                "cds_start": (start - 1) * 3 + 1,
+                                "cds_end": end * 3,
+                                "chromosome": transcript["chromosome"],
+                                "strand": transcript["strand"],
+                                "assembly_name": transcript["assembly_name"],
+                                "genomic_start": min(segment["start"] for segment in segments),
+                                "genomic_end": max(segment["end"] for segment in segments),
+                                "genomic_segments": segments,
+                                "interpro_name": None,
+                                "interpro_entry_type": None,
+                                "panther_subfamily_id": None,
+                                "panther_subfamily_description": None,
+                            }
+                        )
                     payload["feature_groups"] = reference_feature_groups(
                         payload["protein_features"]
                     )
@@ -1693,6 +1739,7 @@ def preprocess_reference(
         # Keep provenance in the same transaction as the tables it describes.
         preprocessing_metadata = {
             "preprocessing_version": "1",
+            "feature_annotation_version": "2",
             "preprocessing_counts": json.dumps(counts),
             "preprocessed_utc": datetime.now(timezone.utc).isoformat(),
             "interpro_entries_sha256": (
@@ -1711,6 +1758,11 @@ def preprocess_reference(
                 else metadata.get("interpro_preserved_metadata_sha256", "")
             ),
         }
+        if uniprot_source is not None:
+            preprocessing_metadata["uniprot_features_source"] = json.dumps(
+                uniprot_source, sort_keys=True
+            )
+            preprocessing_metadata["uniprot_counts"] = json.dumps(uniprot_counts, sort_keys=True)
         if panther_source is not None:
             preprocessing_metadata["panther_classifications_source"] = json.dumps(
                 panther_source, sort_keys=True
@@ -1939,10 +1991,12 @@ def build(args: argparse.Namespace) -> Path:
     Failures preserve the staging database and downloads. Repeating the same
     command skips completed stages; no incomplete reference replaces the output.
     """
+    from .uniprot import UNIPROT_HUMAN_URL
+
     cache = args.cache_dir.expanduser().resolve()
     base = args.base_url.rstrip("/") + "/"
     # Resolution, metadata/schema, tables, FASTA, preprocessing, analysis, check, publication.
-    steps = BuildSteps(1 + 2 + len(TABLES) + len(SEQUENCE_TYPES) + 4)
+    steps = BuildSteps(1 + 3 + len(TABLES) + len(SEQUENCE_TYPES) + 4)
     with steps.step("Resolve Ensembl release and human GRCh38 core directory"):
         release, root, core = resolve_core(base, args.release)
     LOG.info("Resolved Ensembl release %s; core database %s", release, core)
@@ -1986,6 +2040,17 @@ def build(args: argparse.Namespace) -> Path:
             else:
                 interpro_entries = args.interpro_entries
                 LOG.info("Using local InterPro entries: %s", interpro_entries)
+        with steps.step("Prepare reviewed human UniProt features"):
+            if args.uniprot_features is None:
+                uniprot_features = get(UNIPROT_HUMAN_URL, directory=cache / "metadata" / "uniprot")
+                uniprot_source = {"url": UNIPROT_HUMAN_URL, "sha256": source_rows[-1][1]}
+            else:
+                uniprot_features = args.uniprot_features
+                uniprot_source = {
+                    "path": str(uniprot_features),
+                    "sha256": sha256_file(uniprot_features),
+                }
+                LOG.info("Using local UniProt features: %s", uniprot_features)
         with steps.step("Download and read Ensembl table definitions"):
             schema = parse_schema(get(core_url + core + ".sql.gz"))
             absent = set(TABLES) - set(schema)
@@ -2127,6 +2192,13 @@ def build(args: argparse.Namespace) -> Path:
                 fingerprint = json.dumps(
                     {
                         "implementation": sha256_file(Path(__file__)),
+                        "uniprot_implementation": sha256_file(
+                            Path(__file__).with_name("uniprot.py")
+                        ),
+                        "ensembl_implementation": sha256_file(
+                            Path(__file__).with_name("ensembl.py")
+                        ),
+                        "uniprot_sha256": sha256_file(uniprot_features),
                         "interpro_sha256": sha256_file(interpro_entries),
                         "fetch_interpro": fetch_interpro,
                         "panther_sha256": (
@@ -2149,6 +2221,8 @@ def build(args: argparse.Namespace) -> Path:
                         interpro_archive_cache=interpro_cache if fetch_interpro else None,
                         panther_classifications=args.panther_classifications,
                         panther_cache=cache / "metadata" / "panther",
+                        uniprot_features=uniprot_features,
+                        uniprot_source=uniprot_source,
                     )
                     checkpoint.save("preprocessing", fingerprint=fingerprint)
             with steps.step("Analyze database indexes"):
@@ -2226,6 +2300,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         metavar="TSV",
         help="Optional local PANTHER human classification TSV; default: Ensembl's PANTHER release",
     )
+    parser.add_argument(
+        "--uniprot-features",
+        type=Path,
+        metavar="XML",
+        help="Local UniProt XML (optionally gzip); default: reviewed human bulk download",
+    )
     args = parser.parse_args(argv)
     if args.release is not None and args.release <= 0:
         parser.error("--release must be positive")
@@ -2249,6 +2329,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(
                 f"PANTHER classification file does not exist: {args.panther_classifications}"
             )
+    if args.uniprot_features:
+        args.uniprot_features = args.uniprot_features.expanduser().resolve()
+        if not args.uniprot_features.is_file():
+            parser.error(f"UniProt feature file does not exist: {args.uniprot_features}")
     args.species = args.species or SPECIES
     args.base_url = args.base_url or BASE_URL
     args.force = bool(args.force)
@@ -2269,6 +2353,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "Historical InterPro entry-list cache: %s",
         args.cache_dir / "metadata" / "interpro" / "releases",
     )
+    LOG.info("UniProt feature cache: %s", args.cache_dir / "metadata" / "uniprot")
     LOG.info("PANTHER human classification cache: %s", args.cache_dir / "metadata" / "panther")
     LOG.info("Partial downloads are created beside cached files as <filename>.<random>.part")
     if args.interpro_entries:
@@ -2286,7 +2371,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     output,
                     output,
                 )
-                steps = BuildSteps(3)
+                steps = BuildSteps(4)
                 with closing(sqlite3.connect(output.as_uri() + "?mode=rw", uri=True)) as db:
                     with steps.step("Validate existing reference database"):
                         validate_reference_source(db)
@@ -2298,6 +2383,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                             interpro_entries = args.interpro_entries
                             archive_cache = None
                             LOG.info("Using local InterPro entries: %s", interpro_entries)
+                    with steps.step("Prepare reviewed human UniProt features"):
+                        from .uniprot import UNIPROT_HUMAN_URL
+
+                        if args.uniprot_features is None:
+                            uniprot_features, digest = download(
+                                UNIPROT_HUMAN_URL, args.cache_dir / "metadata" / "uniprot"
+                            )
+                            uniprot_source = {"url": UNIPROT_HUMAN_URL, "sha256": digest}
+                        else:
+                            uniprot_features = args.uniprot_features
+                            uniprot_source = {
+                                "path": str(uniprot_features),
+                                "sha256": sha256_file(uniprot_features),
+                            }
+                            LOG.info("Using local UniProt features: %s", uniprot_features)
                     with steps.step("Preprocess transcripts, domains and splice sites"):
                         preprocess_reference(
                             db,
@@ -2305,6 +2405,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             interpro_archive_cache=archive_cache,
                             panther_classifications=args.panther_classifications,
                             panther_cache=args.cache_dir / "metadata" / "panther",
+                            uniprot_features=uniprot_features,
+                            uniprot_source=uniprot_source,
                         )
                 steps.complete()
             else:
@@ -2319,7 +2421,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                     / "ensembl.sqlite",
                 )
                 output = build(args)
-        except (OSError, ValueError, sqlite3.Error, urllib.error.URLError, EOFError) as exc:
+        except (
+            OSError,
+            ValueError,
+            sqlite3.Error,
+            urllib.error.URLError,
+            EOFError,
+            ParseError,
+        ) as exc:
             LOG.error("Build failed: %s", exc)
             return 1
         except KeyboardInterrupt:

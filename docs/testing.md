@@ -10,7 +10,7 @@ From the package root, run `pytest`. The full-reference tests automatically use 
 pytest -m human_reference -v
 ```
 
-The original integration tests in `test_fusion.py` and `test_ensembl.py` each run twice: `[bundled]` uses the original offline fixture and `[built]` uses the completed reference. Assertions are identical for both variants, including SLC45A2::AMACR racemase preservation and AMACR PANTHER subfamily metadata. Missing features in the built reference produce test failures. The byte-for-byte legacy output comparisons remain tied to the bundled reference.
+The original integration tests in `test_fusion.py` and `test_ensembl.py` each run twice: `[bundled]` uses the original offline fixture and `[built]` uses the completed reference. Assertions are identical for both variants, including SLC45A2::AMACR racemase preservation and AMACR PANTHER subfamily metadata. Missing features in the built reference produce test failures. Complete output snapshots remain tied to the bundled reference; they were updated for the expanded feature types, exact source boundaries and provenance fields. Existing frame and translation-start predictions are unchanged.
 
 To run SLC45A2::AMACR against both sources, or only the build:
 
@@ -45,7 +45,7 @@ pytest --human-reference-db=/path/to/ensembl.sqlite
 
 ## Original and lightweight tests
 
-`pytest -m 'not human_reference'` runs only the lightweight tests, regardless of whether a production reference is installed. `pytest -m 'integration and not human_reference'` selects just the original fusion regression scenarios. The fixture `tests/data/reference.sqlite` was converted from the user's cached API responses. It contains 15 transcript models and sparse genome chunks; its release label is for configuration tests, not a verified source release. It must not be used for production annotation or as the full-reference test input. `fusion_golden.json` contains 15 complete legacy outputs, including a same-transcript fusion, compared field-for-field with the local workflow.
+`pytest -m 'not human_reference'` runs only the lightweight tests, regardless of whether a production reference is installed. `pytest -m 'integration and not human_reference'` selects just the original fusion regression scenarios. The fixture `tests/data/reference.sqlite` was converted from the user's cached API responses. It contains 15 transcript models and sparse genome chunks; its release label is for configuration tests, not a verified source release. It must not be used for production annotation or as the full-reference test input. `fusion_golden.json` contains 15 complete fusion regression outputs, including a same-transcript fusion, compared field-for-field with the local workflow.
 
 Other tests cover reference configuration, invalid CLI options, both-strand preprocessing, rollback, progress totals and cleanup, the cross-assembly validation bug, and PANTHER source normalization and bulk subfamily matching. PANTHER checks include a missing-feature reproduction, family/protein mismatches, ambiguous assignments, offline reuse, provenance and rollback. A run that skips the full-reference tests does not validate a production database.
 
@@ -67,3 +67,7 @@ Single-gene integration cases verify retained-portion splicing and translation p
 Late N-terminal breakpoint cases on both strands verify that all domains can remain included at 100% retention while the event is labelled assumed disruptive.
 
 Single-gene UTR cases cover C/5' UTR, C/3' UTR, N/5' UTR, and N/3' UTR on both strands with the other transcript explicitly None. Start-loss and domain-cut cases also run against the installed reference. Controlled sequence fixtures verify native-start retention, next-ATG initiation after splicing, out-of-frame first starts, no remaining ATG, domains before or overlapping the selected start, and downstream premature termination.
+
+UniProt tests run offline using captured human AMACR XML and independently downloaded canonical/isoform protein sequences. They verify sequence identity, described isoform reconstruction, omission of changed/fuzzy intervals, evidence, accession mapping, genomic coordinates, retention of catalytic versus substrate-binding sites, offline reuse and rollback. Synthetic tests exercise the CLI's default download and local-file override. The optional built-reference AMACR site test runs after the local database has been reprocessed to `feature_annotation_version=2`; older builds skip that added test. No full human reference is constructed or downloaded by pytest.
+
+The AMACR fixtures were captured from `https://rest.uniprot.org/uniprotkb/Q9UHK6.xml`, its canonical sequence, and `https://rest.uniprot.org/uniprotkb/Q9UHK6-5.fasta` on 2026-10-01. They are small source captures, not a built human reference.

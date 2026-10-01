@@ -183,6 +183,8 @@ Each functional feature contains:
     "interpro_id": str | None,
     "name": str,
     "domain_type": str,
+    "sources": list[str],
+    "feature_ids": list[str],
     "start": int,
     "end": int,
     "breakpoint_based_status": str,
@@ -197,9 +199,18 @@ Each functional feature contains:
 Returned functional feature types include:
 
 - `domain`
+- `family`
+- `homologous_superfamily`
+- `motif`
 - `binding_site`
 - `active_site`
 - `conserved_site`
+
+Families remain `family`, including PANTHER subfamily annotations. Structural-domain superfamily matches remain `homologous_superfamily`; they are not relabeled as catalytic domains.
+
+Every feature includes its source database(s) and member feature identifier(s). UniProt features additionally include `uniprot_accessions`, `uniprot_isoforms` and `evidence`. Each evidence item has an ECO `code` and, when supplied, a reference `source` and `id`. For example, `ECO:0000250` denotes evidence by sequence similarity and `ECO:0000269` experimental evidence; reviewed status alone does not make every feature experimental. UniProt features without a native feature ID receive an accession plus XML feature ordinal as their local identifier.
+
+UniProt coordinates are mapped to the original Ensembl protein, after full sequence verification. A retained active site or binding site does not imply that the complete fold, localization or enzymatic activity survives.
 
 #### `breakpoint_based_status`
 
@@ -209,7 +220,7 @@ Returned functional feature types include:
 | `disrupted` | Breakpoint passes through the feature |
 | `excluded` | Feature is completely outside the retained portion |
 
-Overlapping annotations representing the same functional feature may produce a slash-delimited combined status.
+Identical feature intervals may produce slash-delimited statuses across alternative products or retained sides. Different source boundaries and different feature identities remain separate.
 
 #### `breakpoint_retained_percent`
 

@@ -1,5 +1,6 @@
 import gzip
 import sqlite3
+from pathlib import Path
 from fusion_function import data as e
 
 
@@ -69,3 +70,15 @@ def fixture(path):
     )
     db.commit()
     return db
+
+
+def uniprot_file(tmp_path: Path) -> Path:
+    """Small reviewed human XML with no mapped features for offline CLI tests."""
+    path = tmp_path / "uniprot.xml"
+    path.write_text(
+        '<uniprot xmlns="http://uniprot.org/uniprot">'
+        '<entry dataset="Swiss-Prot"><accession>PTEST</accession>'
+        '<organism><dbReference type="NCBI Taxonomy" id="9606"/></organism>'
+        "<sequence>MKLFIN</sequence></entry></uniprot>"
+    )
+    return path

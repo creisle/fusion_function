@@ -52,9 +52,9 @@ This also applies to local TSV overrides. UniProt accessions come from the
 first-column identifier; family descriptions and ontology terms are not used
 as subfamily names. Records without a named subfamily are omitted.
 
-Subfamilies enrich existing PANTHER feature intervals only when exact protein cross-references and family IDs agree. Ambiguous assignments are omitted; gene names do not propagate assignments across proteins. No PANTHER API calls or new domain coordinates are needed. Programmatic reprocessing without a new classification file can reuse `ff_panther`; fully offline command-line preparation requires cached downloads or local InterPro and PANTHER files.
+Subfamilies enrich existing PANTHER feature intervals only when exact protein cross-references and family IDs agree. Ambiguous assignments are omitted; gene names do not propagate assignments across proteins. No PANTHER API calls or new domain coordinates are needed. Programmatic reprocessing without a new classification file can reuse `ff_panther`; fully offline command-line preparation requires cached downloads or local InterPro, PANTHER and UniProt files.
 
-To repair source names and add subfamily annotations to an existing reference, install the updated package and run:
+To update feature types, add subfamily annotations and import UniProt features into an existing reference, install the updated package and run:
 
 ```bash
 fusion-function prepare-data --preprocess-only /path/to/ensembl.sqlite
@@ -63,3 +63,15 @@ fusion-function prepare-data --preprocess-only /path/to/ensembl.sqlite
 This regenerates derived records from the stored Ensembl tables and sequences. It does not repeat the genome import or the full-build SQLite integrity check.
 
 Long SQLite phases report their names, elapsed time and completion. The terminal timer refreshes independently of SQLite progress callbacks, so table replacement, query preparation, indexing, commits and full integrity checks remain visible. Redirected logs receive a heartbeat every 30 seconds. These phases have no reliable completion percentage or ETA; the elapsed timer indicates a pending operation, not how much work has finished.
+
+## Reviewed human UniProt features
+
+Preparation fetches reviewed human XML with UniProt's bulk download endpoint. It is cached as `<cache>/metadata/uniprot/stream`, with a SHA-256 sidecar; partial downloads are beside it. `--uniprot-features FILE` accepts local XML or gzip regardless of its extension. UniProt metadata releases are independent of the selected Ensembl release. The input URL/path and checksum are saved in `uniprot_features_source`; `uniprot_counts` records import and sequence-match counts.
+
+Only reviewed human domains, active sites, binding sites, functional sites and motifs are imported. Coordinates must be exact. Ensembl protein IDs in UniProt, or translation-level UniProt cross-references in Ensembl, identify candidates. A complete peptide sequence match is mandatory, including when mapping an older Ensembl release. Gene names and sequence length alone do not establish a mapping.
+
+Explicitly described isoforms are reconstructed from nonoverlapping UniProt splice-variant records. Canonical annotations transfer only through unchanged residues; coordinates shift for edits before the feature. Features touching changed/deleted residues are omitted. Explicit isoform-specific annotations use that isoform's coordinates. External/undescribed isoforms and sequence mismatches are omitted, rather than approximately aligned.
+
+`ff_uniprot_features` stores verified lookups by Ensembl peptide sequence ID. The lookup, transcript records and provenance are replaced in one transaction; a failure preserves the previous reference. Programmatic `preprocess_reference` calls can reuse this persisted lookup without downloading. The CLI defaults to fetching/reusing the bulk XML, including during reprocessing.
+
+The added annotations increase output coverage without adding runtime requests or dependencies. Previously built references remain readable and receive the corrected filtering/boundary behavior immediately. They need `--preprocess-only` once to acquire UniProt features.

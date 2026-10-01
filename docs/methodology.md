@@ -133,15 +133,19 @@ Features before or overlapping the selected start receive the corresponding
 translation-start exclusion or disruption status. The event assumption remains
 `assumed_disruptive: True`, independent of the individual feature predictions.
 
-## 8. InterPro annotation
+## 8. Protein feature annotation
 
 Member-database features are linked to InterPro entries during reference preprocessing. No runtime annotation API calls are made.
 
 Canonical InterPro names are preferred for real functional features such as domains, binding sites, active sites, and conserved sites.
 
-Overlapping annotations representing the same functional feature are collapsed to reduce redundant output.
+Only identical feature identities and intervals are combined. Overlapping annotations with different boundaries or identifiers remain separate, so retention is evaluated against each source interval.
 
-Protein- or family-specific annotations may be retained as fallback domain annotations when no corresponding functional InterPro feature represents that region.
+PANTHER subfamily names retain their actual family type. Gene3D and SUPERFAMILY structural-domain annotations retain the `homologous_superfamily` type.
+
+Reviewed human UniProt domains, sites and motifs are imported during preprocessing. Whole-protein sequence identity and protein cross-references are required. Explicitly described isoforms use validated splice-variant reconstructions; features touching changed residues are omitted. Fuzzy locations are not converted to exact intervals. Evidence codes distinguish experimental annotations from similarity-based predictions. The same breakpoint, splicing and translation checks apply to all feature types.
+
+For example, the published AMACR 84–394 fragment retains annotated catalytic residues 122 and 152, but excludes annotated substrate-binding residues 36 and 55–58. The UniProt sites are annotated by similarity. Neither retention percentages nor retention of catalytic residues establish preserved racemase activity.
 
 ## Interpretation
 

@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 
 from fusion_function import data
-from .preprocessing_fixture import fixture
+from .preprocessing_fixture import fixture, uniprot_file
 
 
 def test_preprocessing_strands_errors_and_metadata(tmp_path):
@@ -31,7 +31,7 @@ def test_preprocessing_strands_errors_and_metadata(tmp_path):
             minus["premrna_sequence"]
             == plus["premrna_sequence"].translate(str.maketrans("ACGT", "TGCA"))[::-1]
         )
-        assert plus["feature_groups"] == [[0, 1]]
+        assert plus["feature_groups"] == [[0], [1]]
         assert plus["protein_features"][0]["interpro_entry_type"] == "domain"
         assert "non-coding" in reader.get_transcript("ENST00000000003")["error"]
         assert "mismatch" in reader.get_transcript("ENST00000000004")["error"]
@@ -51,7 +51,19 @@ def test_preprocessing_is_atomic_and_reusable_without_downloads(tmp_path):
         data.preprocess_reference(db, entries)
     assert list(db.execute("SELECT * FROM ff_transcripts")) == before
     db.close()
-    assert data.main(["--preprocess-only", str(path), "--interpro-entries", str(good)]) == 0
+    assert (
+        data.main(
+            [
+                "--preprocess-only",
+                str(path),
+                "--interpro-entries",
+                str(good),
+                "--uniprot-features",
+                str(uniprot_file(tmp_path)),
+            ]
+        )
+        == 0
+    )
 
 
 def test_preprocess_only_fetches_interpro_by_default(tmp_path, monkeypatch):
@@ -63,11 +75,14 @@ def test_preprocess_only_fetches_interpro_by_default(tmp_path, monkeypatch):
 
     def download(url, directory):
         fetched.append(url)
-        return entries, data.sha256_file(entries)
+        source = entries if url == data.INTERPRO_ENTRIES_URL else uniprot_file(tmp_path)
+        return source, data.sha256_file(source)
 
     monkeypatch.setattr(data, "download", download)
     assert data.main(["--preprocess-only", str(path), "--cache-dir", str(tmp_path)]) == 0
-    assert fetched == [data.INTERPRO_ENTRIES_URL]
+    from fusion_function.uniprot import UNIPROT_HUMAN_URL
+
+    assert fetched == [data.INTERPRO_ENTRIES_URL, UNIPROT_HUMAN_URL]
     with data.ReferenceReader(path) as reader:
         assert reader.get_interpro_annotation("IPR1")["entry_type"] == "domain"
 

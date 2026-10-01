@@ -10,7 +10,7 @@ import sqlite3
 import pytest
 
 from fusion_function import data
-from .preprocessing_fixture import fixture
+from .preprocessing_fixture import fixture, uniprot_file
 
 
 def entries_file(tmp_path):
@@ -64,7 +64,19 @@ def test_local_interpro_reprocessing_preserves_metadata_and_provenance(tmp_path)
     before = list(db.execute("SELECT * FROM ff_interpro"))
     digest = dict(db.execute("SELECT * FROM build_metadata"))["interpro_entries_sha256"]
     db.close()
-    assert data.main(["--preprocess-only", str(path), "--interpro-entries", str(entries)]) == 0
+    assert (
+        data.main(
+            [
+                "--preprocess-only",
+                str(path),
+                "--interpro-entries",
+                str(entries),
+                "--uniprot-features",
+                str(uniprot_file(tmp_path)),
+            ]
+        )
+        == 0
+    )
     with sqlite3.connect(path) as db:
         assert list(db.execute("SELECT * FROM ff_interpro")) == before
         metadata = dict(db.execute("SELECT * FROM build_metadata"))
@@ -159,6 +171,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
         responses[core_url + name + ".txt.gz"] = gzip.compress(text.encode())
     source.close()
     responses[core_url + core + ".sql.gz"] = gzip.compress("\n".join(schema).encode())
+    from fusion_function.uniprot import UNIPROT_HUMAN_URL
+
+    responses[UNIPROT_HUMAN_URL] = gzip.compress(uniprot_file(tmp_path).read_bytes())
     responses[data.INTERPRO_ENTRIES_URL] = entries_file(tmp_path).read_bytes()
     listings = {data.BASE_URL: ["release-115", "release-116"], root + "mysql/": [core]}
     for kind, filename, fasta in [
@@ -190,8 +205,8 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     with caplog.at_level(logging.INFO):
         assert data.main(["--cache-dir", str(cache)]) == 0
     steps = re.findall(r"\[Step (\d+)/(\d+)\]", caplog.text)
-    assert steps == [(str(number), "23") for number in range(1, 24)]
-    assert "Completed all 23 steps" in caplog.text
+    assert steps == [(str(number), "24") for number in range(1, 25)]
+    assert "Completed all 24 steps" in caplog.text
     path = cache / "homo_sapiens/GRCh38/release-116/ensembl.sqlite"
     with data.ReferenceReader(path) as reader:
         assert (
@@ -288,4 +303,4 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 0
     assert not checkpoint.exists()
     with sqlite3.connect(path) as db:
-        assert db.execute("SELECT COUNT(*) FROM source_files").fetchone()[0] == len(data.TABLES) + 4
+        assert db.execute("SELECT COUNT(*) FROM source_files").fetchone()[0] == len(data.TABLES) + 5
