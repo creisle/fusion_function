@@ -1,5 +1,7 @@
 # fusion_function
 
+![Coverage](./badges/coverage.svg)
+
 Predict fusion reading frames and retained, disrupted, or excluded functional protein features from human GRCh38 transcript breakpoints. Annotation uses a preprocessed local SQLite reference and makes no network requests. Preparation uses tqdm progress bars.
 
 ## Install and prepare the reference
