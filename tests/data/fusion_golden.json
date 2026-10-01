@@ -1,0 +1,1943 @@
+[
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23289621",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted/excluded",
+          "breakpoint_retained_percent": 8.1,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130854064",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000318522",
+      "transcript2_id": "ENST00000389048",
+      "breakpoint1": "2:42295516",
+      "breakpoint2": "2:29223528",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000318522",
+          "interpro_id": "IPR064525",
+          "name": "Echinoderm microtubule-associated protein-like 4, trimerisation domain",
+          "domain_type": "domain",
+          "start": 6,
+          "end": 64,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318522",
+          "interpro_id": "IPR005108",
+          "name": "HELP motif",
+          "domain_type": "conserved_site",
+          "start": 255,
+          "end": 293,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318522",
+          "interpro_id": "IPR055439",
+          "name": "EML-like, first beta-propeller domain",
+          "domain_type": "domain",
+          "start": 301,
+          "end": 578,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 70.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000318522",
+          "interpro_id": "IPR055442",
+          "name": "EML-like, second beta-propeller domain",
+          "domain_type": "domain",
+          "start": 595,
+          "end": 864,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR000998",
+          "name": "MAM domain",
+          "domain_type": "domain",
+          "start": 264,
+          "end": 427,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR000998",
+          "name": "MAM domain",
+          "domain_type": "domain",
+          "start": 478,
+          "end": 636,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR055163",
+          "name": "ALK/LTK-like, glycine-rich domain",
+          "domain_type": "domain",
+          "start": 733,
+          "end": 961,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 1116,
+          "end": 1382,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 1122,
+          "end": 1150,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 1245,
+          "end": 1257,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000389048",
+          "interpro_id": "IPR002011",
+          "name": "Tyrosine-protein kinase, receptor class II, conserved site",
+          "domain_type": "conserved_site",
+          "start": 1276,
+          "end": 1284,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000318522": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000302418",
+      "transcript2_id": "ENST00000355710",
+      "breakpoint1": "10:32028428",
+      "breakpoint2": "10:43116584",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000302418",
+          "interpro_id": "IPR001752",
+          "name": "Kinesin motor domain",
+          "domain_type": "domain",
+          "start": 6,
+          "end": 333,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000302418",
+          "interpro_id": "IPR019821",
+          "name": "Kinesin motor domain, conserved site",
+          "domain_type": "conserved_site",
+          "start": 225,
+          "end": 236,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000302418",
+          "interpro_id": "IPR059182",
+          "name": "Kinesin heavy chain, C-terminal domain",
+          "domain_type": "domain",
+          "start": 834,
+          "end": 903,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR041163",
+          "name": "Ret, cadherin like domain 1",
+          "domain_type": "domain",
+          "start": 29,
+          "end": 153,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR002126",
+          "name": "Cadherin-like",
+          "domain_type": "domain",
+          "start": 168,
+          "end": 272,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR040667",
+          "name": "Tyrosine-protein kinase receptor Ret, cadherin like domain 3",
+          "domain_type": "domain",
+          "start": 265,
+          "end": 379,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR041317",
+          "name": "RET, cadherin-like domain 4",
+          "domain_type": "domain",
+          "start": 405,
+          "end": 506,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR055162",
+          "name": "RET, cysteine rich domain",
+          "domain_type": "domain",
+          "start": 518,
+          "end": 620,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 725,
+          "end": 1005,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 730,
+          "end": 758,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000355710",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 870,
+          "end": 882,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000302418": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000296589",
+      "transcript2_id": "ENST00000335606",
+      "breakpoint1": "5:33973126",
+      "breakpoint2": "5:34006836",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000296589",
+          "interpro_id": null,
+          "name": "Solute carrier family 45 and similar sugar transporters of the Major Facilitator Superfamily of transporters",
+          "domain_type": "domain",
+          "start": 35,
+          "end": 521,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 31.5,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000335606",
+          "interpro_id": "IPR050509",
+          "name": "ALPHA-METHYLACYL-COA RACEMASE",
+          "domain_type": "domain",
+          "start": 1,
+          "end": 373,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 77.9,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000296589": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000318560",
+      "breakpoint1": "22:23290413",
+      "breakpoint2": "9:130874943",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "out_of_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 27.6,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001452",
+          "name": "SH3 domain",
+          "domain_type": "domain",
+          "start": 61,
+          "end": 121,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR000980",
+          "name": "SH2 domain",
+          "domain_type": "domain",
+          "start": 125,
+          "end": 217,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR001245",
+          "name": "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+          "domain_type": "domain",
+          "start": 242,
+          "end": 492,
+          "breakpoint_based_status": "included/disrupted/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "frame_disrupted"
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR017441",
+          "name": "Protein kinase, ATP binding site",
+          "domain_type": "binding_site",
+          "start": 248,
+          "end": 271,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR008266",
+          "name": "Tyrosine-protein kinase, active site",
+          "domain_type": "active_site",
+          "start": 359,
+          "end": 371,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000318560",
+          "interpro_id": "IPR015015",
+          "name": "F-actin binding",
+          "domain_type": "domain",
+          "start": 1004,
+          "end": 1130,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "frame_disrupted"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000397938",
+      "transcript2_id": "ENST00000527786",
+      "breakpoint1": "22:29287870",
+      "breakpoint2": "11:128793694",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR000504",
+          "name": "RNA recognition motif domain",
+          "domain_type": "domain",
+          "start": 361,
+          "end": 447,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR001876",
+          "name": "Zinc finger, RanBP2-type",
+          "domain_type": "domain",
+          "start": 518,
+          "end": 549,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000527786",
+          "interpro_id": "IPR003118",
+          "name": "Pointed domain",
+          "domain_type": "domain",
+          "start": 112,
+          "end": 198,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000527786",
+          "interpro_id": "IPR000418",
+          "name": "Ets domain",
+          "domain_type": "domain",
+          "start": 280,
+          "end": 365,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000397938": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000397938",
+      "transcript2_id": "ENST00000527786",
+      "breakpoint1": "22:29287870",
+      "breakpoint2": "11:128777471",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR000504",
+          "name": "RNA recognition motif domain",
+          "domain_type": "domain",
+          "start": 361,
+          "end": 447,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR001876",
+          "name": "Zinc finger, RanBP2-type",
+          "domain_type": "domain",
+          "start": 518,
+          "end": 549,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000527786",
+          "interpro_id": "IPR003118",
+          "name": "Pointed domain",
+          "domain_type": "domain",
+          "start": 112,
+          "end": 198,
+          "breakpoint_based_status": "disrupted",
+          "breakpoint_retained_percent": 2.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000527786",
+          "interpro_id": "IPR000418",
+          "name": "Ets domain",
+          "domain_type": "domain",
+          "start": 280,
+          "end": 365,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000397938": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000397938",
+      "transcript2_id": "ENST00000453032",
+      "breakpoint1": "22:29287870",
+      "breakpoint2": "21:38396509",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR000504",
+          "name": "RNA recognition motif domain",
+          "domain_type": "domain",
+          "start": 361,
+          "end": 447,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000397938",
+          "interpro_id": "IPR001876",
+          "name": "Zinc finger, RanBP2-type",
+          "domain_type": "domain",
+          "start": 518,
+          "end": 549,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000453032",
+          "interpro_id": "IPR003118",
+          "name": "Pointed domain",
+          "domain_type": "domain",
+          "start": 21,
+          "end": 107,
+          "breakpoint_based_status": "excluded",
+          "breakpoint_retained_percent": 0.0,
+          "splicing_based_status": null,
+          "fusion_sequence_status": null
+        },
+        {
+          "transcript_id": "ENST00000453032",
+          "interpro_id": "IPR000418",
+          "name": "Ets domain",
+          "domain_type": "domain",
+          "start": 218,
+          "end": 303,
+          "breakpoint_based_status": "included",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        }
+      ],
+      "translation_start": {
+        "ENST00000397938": "native_start_retained"
+      }
+    }
+  },
+  {
+    "args": [],
+    "kwargs": {
+      "transcript1_id": "ENST00000305877",
+      "transcript2_id": "ENST00000305877",
+      "breakpoint1": "22:23289621",
+      "breakpoint2": "22:23289621",
+      "gene1_terminus": "N",
+      "gene2_terminus": "C"
+    },
+    "result": {
+      "frame_status": "in_frame/out_of_frame",
+      "domains": [
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR015123",
+          "name": "Bcr-Abl oncoprotein oligomerisation",
+          "domain_type": "domain",
+          "start": 3,
+          "end": 75,
+          "breakpoint_based_status": "included/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000219",
+          "name": "Dbl homology domain",
+          "domain_type": "domain",
+          "start": 498,
+          "end": 691,
+          "breakpoint_based_status": "included/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001331",
+          "name": "Guanine-nucleotide dissociation stimulator, CDC24, conserved site",
+          "domain_type": "conserved_site",
+          "start": 639,
+          "end": 664,
+          "breakpoint_based_status": "included/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR001849",
+          "name": "Pleckstrin homology domain",
+          "domain_type": "domain",
+          "start": 708,
+          "end": 868,
+          "breakpoint_based_status": "included/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved/lost",
+          "fusion_sequence_status": "preserved"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000008",
+          "name": "C2 domain",
+          "domain_type": "domain",
+          "start": 893,
+          "end": 1020,
+          "breakpoint_based_status": "included/disrupted/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved/lost",
+          "fusion_sequence_status": "preserved/frame_disrupted"
+        },
+        {
+          "transcript_id": "ENST00000305877",
+          "interpro_id": "IPR000198",
+          "name": "Rho GTPase-activating protein domain",
+          "domain_type": "domain",
+          "start": 1054,
+          "end": 1249,
+          "breakpoint_based_status": "included/excluded",
+          "breakpoint_retained_percent": 100.0,
+          "splicing_based_status": "preserved",
+          "fusion_sequence_status": "preserved/frame_disrupted"
+        }
+      ],
+      "translation_start": {
+        "ENST00000305877": "native_start_retained"
+      }
+    }
+  }
+]

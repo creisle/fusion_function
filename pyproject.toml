@@ -1,0 +1,54 @@
+[project]
+name = "fusion-function"
+version = "0.2.1"
+description = "Fusion frame and protein-domain prediction using a local Ensembl reference"
+authors = [
+    {name = "Caralyn Reisle",email = "creisle@bcgsc.ca"}
+]
+requires-python = ">=3.11,<4.0"
+dependencies = ["tqdm>=4.67,<5"]
+
+[project.scripts]
+fusion-function = "fusion_function.cli:main"
+
+[tool.poetry]
+packages = [
+    { include = "fusion_function", from = "src" }
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)"
+]
+
+[tool.pytest]
+addopts = [
+    "--cov=fusion_function",
+    "--cov-report=term-missing",
+]
+markers = [
+    "integration: local-reference integration and legacy regression tests",
+    "human_reference: integration tests against a fully built human GRCh38 database",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.coverage.run]
+branch = true
+source = ["fusion_function"]
+
+[tool.coverage.report]
+show_missing = true
+precision = 1
