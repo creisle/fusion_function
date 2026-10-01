@@ -60,6 +60,7 @@ The retained terminus of each fusion partner:
 
 ```python
 "N"
+
 "C"
 ```
 
@@ -112,10 +113,7 @@ Inserted sequence is included during fusion reconstruction and can affect readin
 A successful result contains:
 
 ```python
-{
-    "frame_status": "in_frame",
-    "domains": [...]
-}
+{"frame_status": "in_frame", "domains": [...]}
 ```
 
 ### `frame_status`

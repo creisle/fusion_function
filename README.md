@@ -65,9 +65,13 @@ from fusion_function import ReferenceDatabase, annotate_fusion_domains
 
 with ReferenceDatabase(release=116) as reference:
     result = annotate_fusion_domains(
-        transcript1_id="ENST00000305877", transcript2_id="ENST00000318560",
-        breakpoint1="22:23290413", breakpoint2="9:130854064",
-        gene1_terminus="N", gene2_terminus="C", reference=reference,
+        transcript1_id="ENST00000305877",
+        transcript2_id="ENST00000318560",
+        breakpoint1="22:23290413",
+        breakpoint2="9:130854064",
+        gene1_terminus="N",
+        gene2_terminus="C",
+        reference=reference,
     )
 ```
 

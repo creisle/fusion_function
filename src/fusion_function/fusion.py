@@ -40,8 +40,10 @@ TranslationStartStatus = Literal[
     "native_start_lost",
 ]
 TRANSLATION_START_STATUS_ORDER = (
-    "native_start_retained", "alternative_start_found",
-    "alternative_start_not_found", "native_start_lost",
+    "native_start_retained",
+    "alternative_start_found",
+    "alternative_start_not_found",
+    "native_start_lost",
 )
 
 
@@ -188,9 +190,7 @@ def _parse_breakpoint(breakpoint: str) -> tuple[str, int]:
     """Parse an exact chromosome:position breakpoint."""
     chromosome, position = breakpoint.split(":", 1)
     if "-" in position:
-        raise NotImplementedError(
-            f"Breakpoint intervals are not supported: {breakpoint}"
-        )
+        raise NotImplementedError(f"Breakpoint intervals are not supported: {breakpoint}")
     return chromosome, int(position)
 
 
@@ -201,16 +201,12 @@ def _infer_breakpoint_orientation(
     return "L" if (strand, fusion_terminus) in {(1, "N"), (-1, "C")} else "R"
 
 
-def _genomic_to_premrna(
-    position: int, transcript: TranscriptProteinFeatureResult
-) -> int:
+def _genomic_to_premrna(position: int, transcript: TranscriptProteinFeatureResult) -> int:
     """Convert a genomic position to transcript-oriented pre-mRNA coordinates."""
     start = transcript["transcript_genomic_start"]
     end = transcript["transcript_genomic_end"]
     if not start <= position <= end:
-        raise ValueError(
-            f"Position {position} lies outside transcript genomic span {start}-{end}"
-        )
+        raise ValueError(f"Position {position} lies outside transcript genomic span {start}-{end}")
     return position - start + 1 if transcript["strand"] == 1 else end - position + 1
 
 
@@ -223,9 +219,7 @@ def _build_fusion_side(
 ) -> FusionSide:
     """Build the retained pre-mRNA portion of one fusion partner."""
     chromosome, breakpoint_position = _parse_breakpoint(breakpoint)
-    if str(transcript["chromosome"]).removeprefix("chr") != chromosome.removeprefix(
-        "chr"
-    ):
+    if str(transcript["chromosome"]).removeprefix("chr") != chromosome.removeprefix("chr"):
         raise ValueError(
             f"Breakpoint chromosome {chromosome} does not match "
             f"transcript chromosome {transcript['chromosome']}"
@@ -239,14 +233,20 @@ def _build_fusion_side(
     for site in transcript["splice_sites"]:
         premrna_position = site["premrna_position"]
         if retained_start <= premrna_position <= retained_end:
-            splice_sites.append({
-                "type": site["type"], "side": side, "transcript_id": transcript_id,
-                "exon_number": site["exon_number"],
-                "genomic_position": site["genomic_position"],
-                "premrna_position": premrna_position,
-                "local_position": premrna_position - retained_start + 1,
-                "intact": not site["disruption_start"] <= breakpoint_position <= site["disruption_end"],
-            })
+            splice_sites.append(
+                {
+                    "type": site["type"],
+                    "side": side,
+                    "transcript_id": transcript_id,
+                    "exon_number": site["exon_number"],
+                    "genomic_position": site["genomic_position"],
+                    "premrna_position": premrna_position,
+                    "local_position": premrna_position - retained_start + 1,
+                    "intact": not site["disruption_start"]
+                    <= breakpoint_position
+                    <= site["disruption_end"],
+                }
+            )
     coding_segments: list[FusionCodingSegment] = []
     for block in transcript["cds_blocks"]:
         start = max(block["premrna_start"], retained_start)
@@ -286,12 +286,8 @@ def _build_fusion_layout(
 ) -> FusionLayout:
     """Arrange retained partners N-to-C and build the fusion pre-mRNA."""
     if {side1["fusion_terminus"], side2["fusion_terminus"]} != {"N", "C"}:
-        raise ValueError(
-            "Fusion prediction requires one N-terminal and one C-terminal partner"
-        )
-    n_side, c_side = (
-        (side1, side2) if side1["fusion_terminus"] == "N" else (side2, side1)
-    )
+        raise ValueError("Fusion prediction requires one N-terminal and one C-terminal partner")
+    n_side, c_side = (side1, side2) if side1["fusion_terminus"] == "N" else (side2, side1)
     inserted_sequence = inserted_sequence.upper()
     c_offset = n_side["length"] + len(inserted_sequence)
     splice_sites: list[LayoutSpliceSite] = [
@@ -330,8 +326,7 @@ def _build_retained_side_layout(side: FusionSide) -> FusionLayout:
         "total_length": side["length"],
         "sequence": side["sequence"],
         "splice_sites": [
-            {**site, "fusion_position": site["local_position"]}
-            for site in side["splice_sites"]
+            {**site, "fusion_position": site["local_position"]} for site in side["splice_sites"]
         ],
         "coding_segments": [
             {**segment, "fusion_start": segment["local_start"], "fusion_end": segment["local_end"]}
@@ -340,14 +335,11 @@ def _build_retained_side_layout(side: FusionSide) -> FusionLayout:
     }
 
 
-def _generate_splice_patterns(
-    splice_sites: list[LayoutSpliceSite],
-) -> list[list[LayoutSpliceSite]]:
+def _generate_splice_patterns(splice_sites: list[LayoutSpliceSite]) -> list[list[LayoutSpliceSite]]:
     """Generate splice patterns from intact donor/acceptor alternatives."""
     groups: list[list[LayoutSpliceSite]] = []
     for site in sorted(
-        (site for site in splice_sites if site["intact"]),
-        key=lambda x: x["fusion_position"],
+        (site for site in splice_sites if site["intact"]), key=lambda x: x["fusion_position"]
     ):
         if groups and groups[-1][0]["type"] == site["type"]:
             groups[-1].append(site)
@@ -386,8 +378,7 @@ def _get_product_frame_status(
     if translation_start is None:
         return "out_of_frame"
     translated_fragments = [
-        fragment for fragment in coding_fragments
-        if fragment["product_end"] >= translation_start
+        fragment for fragment in coding_fragments if fragment["product_end"] >= translation_start
     ]
     if not translated_fragments:
         return "out_of_frame"
@@ -413,8 +404,12 @@ def _find_stop_position(sequence: str, translation_start: int | None) -> int | N
 
 
 def _build_splice_product(
-    product_index: int, layout: FusionLayout, splice_pattern: list[LayoutSpliceSite],
-    *, search_for_start: bool = False, validate_native_start: bool = False,
+    product_index: int,
+    layout: FusionLayout,
+    splice_pattern: list[LayoutSpliceSite],
+    *,
+    search_for_start: bool = False,
+    validate_native_start: bool = False,
 ) -> SpliceProduct:
     """Construct one spliced fusion transcript and determine frame and stop."""
     if len(splice_pattern) % 2:
@@ -426,18 +421,12 @@ def _build_splice_product(
         if donor["fusion_position"] >= acceptor["fusion_position"]:
             raise ValueError("Donor must precede acceptor")
         if donor["fusion_position"] + 1 <= acceptor["fusion_position"] - 1:
-            removed.append(
-                (donor["fusion_position"] + 1, acceptor["fusion_position"] - 1)
-            )
+            removed.append((donor["fusion_position"] + 1, acceptor["fusion_position"] - 1))
     retained: list[tuple[int, int, int, int]] = []
     product_position = 1
-    for fusion_start, fusion_end in _subtract_intervals(
-        1, layout["total_length"], removed
-    ):
+    for fusion_start, fusion_end in _subtract_intervals(1, layout["total_length"], removed):
         length = fusion_end - fusion_start + 1
-        retained.append(
-            (fusion_start, fusion_end, product_position, product_position + length - 1)
-        )
+        retained.append((fusion_start, fusion_end, product_position, product_position + length - 1))
         product_position += length
     sequence = "".join(
         layout["sequence"][fusion_start - 1 : fusion_end]
@@ -457,9 +446,7 @@ def _build_splice_product(
                     "source_cds_start": segment["source_cds_start"]
                     + start
                     - segment["fusion_start"],
-                    "source_cds_end": segment["source_cds_start"]
-                    + end
-                    - segment["fusion_start"],
+                    "source_cds_end": segment["source_cds_start"] + end - segment["fusion_start"],
                     "product_start": product_start + start - fusion_start,
                     "product_end": product_start + end - fusion_start,
                 }
@@ -474,8 +461,9 @@ def _build_splice_product(
     ]
     if search_for_start or validate_native_start:
         native_candidates = [
-            (position, transcript_id) for position, transcript_id in native_candidates
-            if sequence[position - 1:position + 2] == "ATG"
+            (position, transcript_id)
+            for position, transcript_id in native_candidates
+            if sequence[position - 1 : position + 2] == "ATG"
         ]
     translation_start, start_transcript_id = next(iter(native_candidates), (None, None))
     start_source: Literal["alternative", "not_found"] | None = None
@@ -509,10 +497,13 @@ def _build_splice_product(
     # This describes initiation of this product once, rather than separate
     # outcomes for each occurrence of the same source transcript.
     result["start_status"] = (
-        "native_start_retained" if native_start_retained else
-        "native_start_lost" if not coding_fragments or not search_for_start else
-        "alternative_start_found" if translation_start is not None else
-        "alternative_start_not_found"
+        "native_start_retained"
+        if native_start_retained
+        else "native_start_lost"
+        if not coding_fragments or not search_for_start
+        else "alternative_start_found"
+        if translation_start is not None
+        else "alternative_start_not_found"
     )
     result["start_transcript_id"] = start_transcript_id
     return result
@@ -585,8 +576,12 @@ def _classify_feature(
         # An alternative ATG can occur inside a retained feature. Compare phase
         # and continuity only for bases translated from that start onward.
         translated = [
-            (start + max(0, translation_start - product_start), end,
-             max(product_start, translation_start), product_end)
+            (
+                start + max(0, translation_start - product_start),
+                end,
+                max(product_start, translation_start),
+                product_end,
+            )
             for start, end, product_start, product_end in fragments
             if product_end >= translation_start
         ]
@@ -598,9 +593,15 @@ def _classify_feature(
             or (translated[0][2] - translation_start) % 3 != (translated[0][0] - 1) % 3
         ):
             status = "frame_disrupted"
-        elif splice_product["stop_position"] is not None and splice_product["stop_position"] <= translated[0][2]:
+        elif (
+            splice_product["stop_position"] is not None
+            and splice_product["stop_position"] <= translated[0][2]
+        ):
             status = "premature_termination_excluded"
-        elif splice_product["stop_position"] is not None and splice_product["stop_position"] <= translated[-1][3]:
+        elif (
+            splice_product["stop_position"] is not None
+            and splice_product["stop_position"] <= translated[-1][3]
+        ):
             status = "premature_termination_disrupted"
         elif translation_start > fragments[0][2]:
             status = "translation_start_disrupted"
@@ -611,9 +612,7 @@ def _classify_feature(
 
 def _combine_statuses(statuses: list[str | None], order: tuple[str, ...]) -> str | None:
     """Combine statuses into a stable slash-delimited summary."""
-    observed = {
-        status for value in statuses if value is not None for status in value.split("/")
-    }
+    observed = {status for value in statuses if value is not None for status in value.split("/")}
     return "/".join(status for status in order if status in observed) or None
 
 
@@ -628,15 +627,9 @@ def _annotate_feature_statuses(
     annotated: list[AnnotatedProteinFeature] = []
     for feature in side["protein_features"]:
         feature_length = feature["cds_end"] - feature["cds_start"] + 1
-        covered = _covered_length(
-            feature["cds_start"], feature["cds_end"], retained_cds
-        )
+        covered = _covered_length(feature["cds_start"], feature["cds_end"], retained_cds)
         breakpoint_status: BreakpointBasedStatus = (
-            "excluded"
-            if covered == 0
-            else "disrupted"
-            if covered < feature_length
-            else "included"
+            "excluded" if covered == 0 else "disrupted" if covered < feature_length else "included"
         )
         if covered > 0:
             # An N- or C-terminal breakpoint retains a continuous source CDS
@@ -645,12 +638,8 @@ def _annotate_feature_statuses(
             # removed by the breakpoint as an additional splicing loss.
             retained_feature: ProteinFeature = {
                 **feature,
-                "cds_start": max(
-                    feature["cds_start"], min(start for start, _ in retained_cds)
-                ),
-                "cds_end": min(
-                    feature["cds_end"], max(end for _, end in retained_cds)
-                ),
+                "cds_start": max(feature["cds_start"], min(start for start, _ in retained_cds)),
+                "cds_end": min(feature["cds_end"], max(end for _, end in retained_cds)),
             }
             predictions = [
                 _classify_feature(retained_feature, side["side"], splice_product)
@@ -686,7 +675,9 @@ def _annotate_feature_statuses(
     return annotated
 
 
-def _resolve_feature_metadata(features: list[AnnotatedProteinFeature]) -> list[ResolvedAnnotatedProteinFeature]:
+def _resolve_feature_metadata(
+    features: list[AnnotatedProteinFeature],
+) -> list[ResolvedAnnotatedProteinFeature]:
     """Use metadata already resolved during preprocessing."""
     resolved: list[ResolvedAnnotatedProteinFeature] = []
     for feature in features:
@@ -697,11 +688,14 @@ def _resolve_feature_metadata(features: list[AnnotatedProteinFeature]) -> list[R
                 "Reprocess the database with 'fusion-function prepare-data --preprocess-only DB'. "
                 "Metadata is fetched automatically; --interpro-entries FILE supplies a local list."
             )
-        resolved.append({
-            **feature, "resolved_interpro_id": feature["interpro_id"],
-            "member_name": feature.get("interpro_name"),
-            "member_entry_type": entry_type,
-        })
+        resolved.append(
+            {
+                **feature,
+                "resolved_interpro_id": feature["interpro_id"],
+                "member_name": feature.get("interpro_name"),
+                "member_entry_type": entry_type,
+            }
+        )
     return resolved
 
 
@@ -710,9 +704,7 @@ def _overlap(start1: int, end1: int, start2: int, end2: int) -> int:
     return max(0, min(end1, end2) - max(start1, start2) + 1)
 
 
-def _aggregate_feature_group(
-    features: list[ResolvedAnnotatedProteinFeature],
-) -> AggregatedDomain:
+def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) -> AggregatedDomain:
     """Aggregate feature records representing one InterPro occurrence."""
     interpro_id = next(
         (
@@ -727,14 +719,7 @@ def _aggregate_feature_group(
         "interpro_id": interpro_id,
         "name": next(
             (feature["member_name"] for feature in features if feature["member_name"]),
-            next(
-                (
-                    feature["description"]
-                    for feature in features
-                    if feature["description"]
-                ),
-                None,
-            ),
+            next((feature["description"] for feature in features if feature["description"]), None),
         ),
         "specific_name": next(
             (
@@ -745,11 +730,7 @@ def _aggregate_feature_group(
             None,
         ),
         "domain_type": next(
-            (
-                feature["member_entry_type"]
-                for feature in features
-                if feature["member_entry_type"]
-            ),
+            (feature["member_entry_type"] for feature in features if feature["member_entry_type"]),
             None,
         ),
         "sources": sorted(
@@ -768,8 +749,7 @@ def _aggregate_feature_group(
             feature["breakpoint_retained_percent"] for feature in features
         ),
         "splicing_based_status": _combine_statuses(
-            [feature["splicing_based_status"] for feature in features],
-            ("preserved", "lost"),
+            [feature["splicing_based_status"] for feature in features], ("preserved", "lost")
         ),
         "fusion_sequence_status": _combine_statuses(
             [feature["fusion_sequence_status"] for feature in features],
@@ -785,18 +765,14 @@ def _aggregate_feature_group(
     }
 
 
-def _same_functional_feature(
-    feature1: AggregatedDomain, feature2: AggregatedDomain
-) -> bool:
+def _same_functional_feature(feature1: AggregatedDomain, feature2: AggregatedDomain) -> bool:
     """Determine whether two annotations represent one functional feature."""
     if (
         feature1["transcript_id"] != feature2["transcript_id"]
         or feature1["domain_type"] != feature2["domain_type"]
     ):
         return False
-    overlap = _overlap(
-        feature1["start"], feature1["end"], feature2["start"], feature2["end"]
-    )
+    overlap = _overlap(feature1["start"], feature1["end"], feature2["start"], feature2["end"])
     if overlap == 0:
         return False
     length1 = feature1["end"] - feature1["start"] + 1
@@ -816,8 +792,7 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
     specific_annotations = [
         domain
         for domain in domains
-        if domain.get("specific_name")
-        and domain["domain_type"] not in RELEVANT_ENTRY_TYPES
+        if domain.get("specific_name") and domain["domain_type"] not in RELEVANT_ENTRY_TYPES
     ]
 
     retained_domains = [
@@ -857,19 +832,15 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
             continue
 
         retained_domains.append(
-            {
-                **annotation,
-                "name": cast(str, annotation["specific_name"]),
-                "domain_type": "domain",
-            }
+            {**annotation, "name": cast(str, annotation["specific_name"]), "domain_type": "domain"}
         )
 
     buckets: dict[tuple[str, str], list[AggregatedDomain]] = {}
 
     for domain in retained_domains:
-        buckets.setdefault(
-            (domain["transcript_id"], cast(str, domain["domain_type"])), []
-        ).append(domain)
+        buckets.setdefault((domain["transcript_id"], cast(str, domain["domain_type"])), []).append(
+            domain
+        )
 
     final: list[FunctionalDomain] = []
 
@@ -878,11 +849,7 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
 
         for domain in sorted(
             bucket,
-            key=lambda x: (
-                x["interpro_id"] is not None,
-                len(x["sources"]),
-                x["end"] - x["start"],
-            ),
+            key=lambda x: (x["interpro_id"] is not None, len(x["sources"]), x["end"] - x["start"]),
             reverse=True,
         ):
             for group in groups:
@@ -914,12 +881,9 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
                             ("included", "disrupted", "excluded"),
                         ),
                     ),
-                    "breakpoint_retained_percent": representative[
-                        "breakpoint_retained_percent"
-                    ],
+                    "breakpoint_retained_percent": representative["breakpoint_retained_percent"],
                     "splicing_based_status": _combine_statuses(
-                        [x["splicing_based_status"] for x in group],
-                        ("preserved", "lost"),
+                        [x["splicing_based_status"] for x in group], ("preserved", "lost")
                     ),
                     "fusion_sequence_status": _combine_statuses(
                         [x["fusion_sequence_status"] for x in group],
@@ -936,14 +900,7 @@ def _finalize_domains(domains: list[AggregatedDomain]) -> list[FunctionalDomain]
             )
 
     return sorted(
-        final,
-        key=lambda x: (
-            x["transcript_id"],
-            x["start"],
-            x["end"],
-            x["domain_type"],
-            x["name"],
-        ),
+        final, key=lambda x: (x["transcript_id"], x["start"], x["end"], x["domain_type"], x["name"])
     )
 
 
@@ -959,10 +916,12 @@ def _summarize_frame_status(splice_products: list[SpliceProduct]) -> FusionFrame
 
 def _summarize_translation_start(products: list[SpliceProduct]) -> str:
     """Combine distinct product initiation outcomes in a stable slash order."""
-    return cast(str, _combine_statuses(
-        [product["start_status"] for product in products],
-        TRANSLATION_START_STATUS_ORDER,
-    ))
+    return cast(
+        str,
+        _combine_statuses(
+            [product["start_status"] for product in products], TRANSLATION_START_STATUS_ORDER
+        ),
+    )
 
 
 def annotate_fusion_domains(
@@ -988,8 +947,12 @@ def annotate_fusion_domains(
         ("transcript1", transcript1_id, breakpoint1, gene1_terminus),
         ("transcript2", transcript2_id, breakpoint2, gene2_terminus),
     ]
-    if (transcript1_id and transcript2_id
-            and gene1_terminus == gene2_terminus and gene1_terminus in ("N", "C")):
+    if (
+        transcript1_id
+        and transcript2_id
+        and gene1_terminus == gene2_terminus
+        and gene1_terminus in ("N", "C")
+    ):
         raise NotImplementedError(
             "N/N and C/C fusions are unsupported; two known partners require one N and one C terminus"
         )
@@ -1002,10 +965,14 @@ def annotate_fusion_domains(
                 "error": f"{side_name} ({transcript_id}) requires a breakpoint and "
                 f"an N or C terminus; received breakpoint={breakpoint!r}, terminus={terminus!r}"
             }
-        known_partners.append((
-            cast(FusionSideName, side_name), transcript_id, breakpoint,
-            cast(FusionTerminus, terminus),
-        ))
+        known_partners.append(
+            (
+                cast(FusionSideName, side_name),
+                transcript_id,
+                breakpoint,
+                cast(FusionTerminus, terminus),
+            )
+        )
     if not known_partners:
         return {"error": "At least one known transcript is required for feature annotation"}
 
@@ -1019,16 +986,15 @@ def annotate_fusion_domains(
     sides: list[FusionSide] = []
     for side_name, transcript_id, breakpoint, terminus in known_partners:
         try:
-            sides.append(_build_fusion_side(
-                side_name, transcript_id, breakpoint, terminus, transcripts[transcript_id]
-            ))
+            sides.append(
+                _build_fusion_side(
+                    side_name, transcript_id, breakpoint, terminus, transcripts[transcript_id]
+                )
+            )
         except (ValueError, NotImplementedError) as error:
             return {"error": f"{side_name} ({transcript_id}): {error}"}
 
-    can_reconstruct = (
-        len(sides) == 2
-        and {side["fusion_terminus"] for side in sides} == {"N", "C"}
-    )
+    can_reconstruct = len(sides) == 2 and {side["fusion_terminus"] for side in sides} == {"N", "C"}
     splice_products: list[SpliceProduct] = []
     products_by_side: dict[FusionSideName, list[SpliceProduct]] = {}
     if can_reconstruct:
@@ -1037,9 +1003,7 @@ def annotate_fusion_domains(
             _build_splice_product(
                 index, layout, pattern, search_for_start=True, validate_native_start=True
             )
-            for index, pattern in enumerate(
-                _generate_splice_patterns(layout["splice_sites"]), 1
-            )
+            for index, pattern in enumerate(_generate_splice_patterns(layout["splice_sites"]), 1)
         ]
         products_by_side = {side["side"]: splice_products for side in sides}
     else:
@@ -1047,9 +1011,7 @@ def annotate_fusion_domains(
             layout = _build_retained_side_layout(side)
             products = [
                 _build_splice_product(
-                    index, layout, pattern,
-                    search_for_start=True,
-                    validate_native_start=True,
+                    index, layout, pattern, search_for_start=True, validate_native_start=True
                 )
                 for index, pattern in enumerate(
                     _generate_splice_patterns(layout["splice_sites"]), 1
@@ -1062,20 +1024,27 @@ def annotate_fusion_domains(
     grouped: dict[tuple[str, int], list[ResolvedAnnotatedProteinFeature]] = {}
     for side in sides:
         transcript_id = side["transcript_id"]
-        features = _resolve_feature_metadata(_annotate_feature_statuses(side, products_by_side[side["side"]]))
+        features = _resolve_feature_metadata(
+            _annotate_feature_statuses(side, products_by_side[side["side"]])
+        )
         for group_index, indices in enumerate(transcripts[transcript_id]["feature_groups"]):
-            grouped.setdefault((transcript_id, group_index), []).extend(features[index] for index in indices)
+            grouped.setdefault((transcript_id, group_index), []).extend(
+                features[index] for index in indices
+            )
     domains = [_aggregate_feature_group(features) for features in grouped.values()]
     result: FusionDomainResult = {
         "frame_status": (
             _summarize_frame_status(splice_products)
-            if can_reconstruct or any(
-                product["translation_start"] is not None and any(
+            if can_reconstruct
+            or any(
+                product["translation_start"] is not None
+                and any(
                     fragment["product_end"] >= product["translation_start"]
                     for fragment in product["coding_fragments"]
                 )
                 for product in splice_products
-            ) else None
+            )
+            else None
         ),
         "domains": _finalize_domains(domains),
     }

@@ -95,10 +95,12 @@ class EnsemblError(TypedDict):
 ProteinFeatureResponse = TranscriptProteinFeatureResult | EnsemblError
 
 
-
 def get_protein_domains(
-    transcript_id: str, *, reference: ReferenceReader | None = None,
-    database: str | Path | None = None, release: int | None = None,
+    transcript_id: str,
+    *,
+    reference: ReferenceReader | None = None,
+    database: str | Path | None = None,
+    release: int | None = None,
 ) -> ProteinFeatureResponse:
     """Read prepared transcript structure, sequence and protein features locally."""
     reader = get_reference(reference=reference, database=database, release=release)

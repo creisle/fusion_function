@@ -1,4 +1,5 @@
 """Reference configuration and read-only access to prepared human databases."""
+
 from __future__ import annotations
 
 import os
@@ -10,7 +11,9 @@ from .data import ASSEMBLY, SPECIES, ReferenceReader, default_cache_dir
 
 
 def resolve_database(
-    database: str | Path | None = None, *, release: int | None = None,
+    database: str | Path | None = None,
+    *,
+    release: int | None = None,
     cache_dir: str | Path | None = None,
 ) -> Path:
     """Choose explicit path, FUSION_FUNCTION_DB, or newest prepared local release."""
@@ -33,31 +36,43 @@ def resolve_database(
             if not candidates:
                 raise FileNotFoundError(
                     f"No prepared human reference in {root}. Run 'fusion-function prepare-data' "
-                    "once, or set FUSION_FUNCTION_DB to an existing preprocessed database.")
+                    "once, or set FUSION_FUNCTION_DB to an existing preprocessed database."
+                )
             path = max(candidates)[1]
         path = path.resolve()
     if not path.is_file():
-        raise FileNotFoundError(f"Reference database not found: {path}. Run 'fusion-function prepare-data'.")
+        raise FileNotFoundError(
+            f"Reference database not found: {path}. Run 'fusion-function prepare-data'."
+        )
     return path
 
 
 class ReferenceDatabase(ReferenceReader):
     """Reusable per-thread reference reader; close explicitly or use a context manager."""
+
     def __init__(
-        self, database: str | Path | None = None, *, release: int | None = None,
-        cache_dir: str | Path | None = None, cached_chunks: int = 64,
+        self,
+        database: str | Path | None = None,
+        *,
+        release: int | None = None,
+        cache_dir: str | Path | None = None,
+        cached_chunks: int = 64,
     ) -> None:
         self.path = resolve_database(database, release=release, cache_dir=cache_dir)
         super().__init__(self.path, cached_chunks=cached_chunks)
         try:
             if self.metadata.get("format_version") != "1":
-                raise ValueError("Unsupported reference format; rebuild with 'fusion-function prepare-data'")
+                raise ValueError(
+                    "Unsupported reference format; rebuild with 'fusion-function prepare-data'"
+                )
             if self.metadata.get("species") != SPECIES:
                 raise ValueError("Only human reference databases are supported")
             if self.metadata.get("assembly", ASSEMBLY) != ASSEMBLY:
                 raise ValueError("Only GRCh38 reference databases are supported")
             if release is not None and self.metadata.get("release") != str(release):
-                raise ValueError(f"Requested release {release}, but database has release {self.metadata.get('release')}")
+                raise ValueError(
+                    f"Requested release {release}, but database has release {self.metadata.get('release')}"
+                )
         except BaseException:
             self.close()
             raise
@@ -76,7 +91,9 @@ def close_default_reference() -> None:
 
 
 def get_reference(
-    *, reference: ReferenceReader | None = None, database: str | Path | None = None,
+    *,
+    reference: ReferenceReader | None = None,
+    database: str | Path | None = None,
     release: int | None = None,
 ) -> ReferenceReader:
     if reference is not None:

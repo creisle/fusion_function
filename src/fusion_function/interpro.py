@@ -1,4 +1,5 @@
 """Local InterPro metadata access (no network requests)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,7 +18,12 @@ class ProteinFeatureAnnotation(TypedDict):
 
 
 def get_interpro_annotation(
-    interpro_id: str, *, reference: ReferenceReader | None = None,
-    database: str | Path | None = None, release: int | None = None,
+    interpro_id: str,
+    *,
+    reference: ReferenceReader | None = None,
+    database: str | Path | None = None,
+    release: int | None = None,
 ) -> ProteinFeatureAnnotation | None:
-    return get_reference(reference=reference, database=database, release=release).get_interpro_annotation(interpro_id)
+    return get_reference(
+        reference=reference, database=database, release=release
+    ).get_interpro_annotation(interpro_id)
