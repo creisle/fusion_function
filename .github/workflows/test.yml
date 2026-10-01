@@ -1,0 +1,58 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: build
+
+on:
+  - push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        pip install poetry
+        poetry install
+    - name: Check with ruff
+      run: |
+        pip install ruff
+        ruff format --check src tests
+    - name: Full Tests with pytest
+      run: |
+        pip list
+        poetry run pytest --cov src --cov-report term --cov-report=json
+    - name: Extract Coverage Percentage
+      id: extract_coverage
+      run: |
+        # Extract overall coverage rounded to integer
+        COVERAGE=$(python -c "import json; print(round(json.load(open('coverage.json'))['totals']['percent_covered']))")
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+      if: matrix.python-version == 3.11
+    - name: Generate Coverage Badge
+      run: |
+        mkdir -p badges
+        npx -y generated-badges --label coverage --status "${{ env.COVERAGE }}%" --color green --output badges/coverage.svg
+    # Commit and push the badge back to the repository
+    - name: Commit & Push Badge
+      if: matrix.python-version == 3.11 && github.ref == 'refs/heads/main'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add badges/coverage.svg
+        git commit -m "chore: update coverage badge [skip ci]" || true
+
+        # 2. Push to origin using the active token context
+        git push origin HEAD:${{ github.ref_name }}
