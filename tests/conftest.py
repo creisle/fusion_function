@@ -85,10 +85,24 @@ def no_network(monkeypatch):
     import socket
     import urllib.request
 
-    def blocked(*args, **kwargs):
+    def blocked_connection(
+        address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None, *, all_errors=False
+    ):
         raise AssertionError("Runtime/test network access is forbidden")
 
-    monkeypatch.setattr(socket, "create_connection", blocked)
-    monkeypatch.setattr(urllib.request, "urlopen", blocked)
+    def blocked_urlopen(
+        url,
+        data=None,
+        timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+        *,
+        cafile=None,
+        capath=None,
+        cadefault=False,
+        context=None,
+    ):
+        raise AssertionError("Runtime/test network access is forbidden")
+
+    monkeypatch.setattr(socket, "create_connection", blocked_connection)
+    monkeypatch.setattr(urllib.request, "urlopen", blocked_urlopen)
     yield
     close_default_reference()

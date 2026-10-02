@@ -30,7 +30,7 @@ For each partner:
 
 Transcript strand is accounted for when genomic coordinates are converted into transcript-oriented coordinates.
 
-A valid fusion requires one N-terminal and one C-terminal partner.
+Two known partners require one N-terminal and one C-terminal portion. A single known N- or C-terminal partner is also supported and is assumed disruptive.
 
 ## 3. Fusion layout
 
@@ -94,7 +94,7 @@ This considers only whether the original feature coordinates fall within the ret
 
 `breakpoint_retained_percent` reports how much of the feature remains.
 
-### Splicing-based status
+### Post-splicing status
 
 For both fully and partially retained features, the portion retained by the
 breakpoint is mapped through each predicted splice product. Splicing removes a
@@ -106,7 +106,7 @@ A feature can be:
 - `preserved`
 - `lost`
 
-### Fusion-sequence status
+### Post-translation status
 
 For features preserved through splicing, the reconstructed translation is assessed.
 

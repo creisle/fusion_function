@@ -67,7 +67,7 @@ class ReferenceDatabase(ReferenceReader):
                 )
             if self.metadata.get("species") != SPECIES:
                 raise ValueError("Only human reference databases are supported")
-            if self.metadata.get("assembly", ASSEMBLY) != ASSEMBLY:
+            if self.metadata.get("assembly") != ASSEMBLY:
                 raise ValueError("Only GRCh38 reference databases are supported")
             if release is not None and self.metadata.get("release") != str(release):
                 raise ValueError(

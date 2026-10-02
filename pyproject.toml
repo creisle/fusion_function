@@ -32,7 +32,7 @@ addopts = [
     "--cov-report=term-missing",
 ]
 markers = [
-    "integration: local-reference integration and legacy regression tests",
+    "integration: local-reference integration and fusion regression tests",
     "human_reference: integration tests against a fully built human GRCh38 database",
 ]
 

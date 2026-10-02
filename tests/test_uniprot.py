@@ -145,7 +145,7 @@ def test_exact_sequence_mapping_evidence_and_genomic_segments(
     entries = tmp_path / "entry.list"
     entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
     data.preprocess_reference(db, entries, uniprot_features=path)
-    payload = json.loads(
+    payload = data.decode_transcript_payload(
         db.execute(
             "SELECT payload FROM ff_transcripts WHERE transcript_id='ENST00000000001'"
         ).fetchone()[0]
@@ -161,7 +161,7 @@ def test_exact_sequence_mapping_evidence_and_genomic_segments(
     ]
     assert features[1]["genomic_segments"][0]["start"] == 148
     metadata = dict(db.execute("SELECT * FROM build_metadata"))
-    assert metadata["feature_annotation_version"] == "2"
+    assert metadata["feature_annotation_version"] == "3"
     assert json.loads(metadata["uniprot_features_source"])["sha256"] == data.sha256_file(path)
     before = list(db.execute("SELECT * FROM ff_transcripts"))
     data.preprocess_reference(db, entries)  # Persisted lookup works offline.
@@ -286,6 +286,78 @@ def test_fuzzy_coordinates_are_omitted(tmp_path: Path, status: str) -> None:
     db.close()
 
 
+@pytest.mark.parametrize("changed", ["xml", "sources", "mapping", "release", "lookup"])
+def test_verified_uniprot_lookup_reuse_and_invalidation(tmp_path, monkeypatch, caplog, changed):
+    from fusion_function import uniprot
+
+    db = fixture(tmp_path / "reference.sqlite")
+    db.execute("CREATE TABLE source_files (url TEXT PRIMARY KEY, sha256 TEXT, bytes INTEGER)")
+    db.execute("INSERT INTO source_files VALUES ('ensembl-source', 'original-checksum', 123)")
+    entries = tmp_path / "entry.list"
+    entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
+    xml = small_xml(tmp_path)
+    data.preprocess_reference(db, entries, uniprot_features=xml)
+    before = list(db.execute("SELECT * FROM ff_transcripts"))
+    counts = dict(db.execute("SELECT * FROM build_metadata"))["uniprot_counts"]
+    calls = []
+    original = uniprot.import_features
+
+    def record_import(connection, path):
+        calls.append(path)
+        return original(connection, path)
+
+    monkeypatch.setattr(uniprot, "import_features", record_import)
+    with caplog.at_level("INFO"):
+        data.preprocess_reference(db, entries, uniprot_features=xml)
+    assert calls == []
+    assert "Reusing sequence-verified UniProt lookups" in caplog.text
+    assert list(db.execute("SELECT * FROM ff_transcripts")) == before
+    assert dict(db.execute("SELECT * FROM build_metadata"))["uniprot_counts"] == counts
+    if changed == "xml":
+        xml.write_text(xml.read_text().replace("Proton donor", "Changed annotation"))
+    elif changed == "sources":
+        db.execute("UPDATE source_files SET sha256='changed-checksum'")
+    elif changed == "mapping":
+        sha256 = data.sha256_file
+
+        def changed_hash(path, *, show_progress=False):
+            return (
+                "changed-code"
+                if path.name == "uniprot.py"
+                else sha256(path, show_progress=show_progress)
+            )
+
+        monkeypatch.setattr(data, "sha256_file", changed_hash)
+    elif changed == "release":
+        db.execute("UPDATE build_metadata SET value='100' WHERE key='release'")
+    else:
+        db.execute("DROP TABLE ff_uniprot_features")
+    data.preprocess_reference(db, entries, uniprot_features=xml)
+    assert calls == [xml]
+    db.close()
+
+
+def test_uniprot_without_source_provenance_is_always_reverified(tmp_path, monkeypatch):
+    from fusion_function import uniprot
+
+    db = fixture(tmp_path / "reference.sqlite")
+    entries = tmp_path / "entry.list"
+    entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
+    xml = small_xml(tmp_path)
+    data.preprocess_reference(db, entries, uniprot_features=xml)
+    calls = []
+    original = uniprot.import_features
+
+    def record_import(connection, path):
+        calls.append(path)
+        return original(connection, path)
+
+    monkeypatch.setattr(uniprot, "import_features", record_import)
+    data.preprocess_reference(db, entries, uniprot_features=xml)
+    assert calls == [xml]
+    db.close()
+
+
 def test_invalid_uniprot_replacement_preserves_previous_derived_tables(tmp_path: Path) -> None:
     db = fixture(tmp_path / "reference.sqlite")
     entries = tmp_path / "entry.list"
@@ -304,24 +376,12 @@ def test_invalid_uniprot_replacement_preserves_previous_derived_tables(tmp_path:
     db.close()
 
 
-def test_runtime_retention_uses_sites_and_preserves_old_group_boundaries(tmp_path: Path) -> None:
+def test_runtime_retention_uses_sites_and_preserves_distinct_boundaries(tmp_path: Path) -> None:
     path = tmp_path / "reference.sqlite"
     db = fixture(path)
     entries = tmp_path / "entry.list"
     entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
     data.preprocess_reference(db, entries, uniprot_features=small_xml(tmp_path))
-    payload = json.loads(
-        db.execute(
-            "SELECT payload FROM ff_transcripts WHERE transcript_id='ENST00000000001'"
-        ).fetchone()[0]
-    )
-    # Simulate the overlap groups from a previously built database.
-    payload["feature_groups"] = [[0, 1], [2], [3], [4]]
-    db.execute(
-        "UPDATE ff_transcripts SET payload=? WHERE transcript_id='ENST00000000001'",
-        (json.dumps(payload),),
-    )
-    db.commit()
     db.close()
     result = annotate_fusion_domains(
         "ENST00000000001", None, "1:145", "1:900", "N", "", database=path
@@ -346,12 +406,12 @@ def test_runtime_retention_uses_sites_and_preserves_old_group_boundaries(tmp_pat
 @pytest.mark.integration
 @pytest.mark.human_reference
 def test_built_amacr_has_verified_functional_sites(human_reference_db: ReferenceDatabase) -> None:
-    if human_reference_db.metadata.get("feature_annotation_version") != "2":
-        pytest.skip("Reprocess the built database to add reviewed UniProt features")
     transcript = human_reference_db.get_transcript("ENST00000335606")
     assert "error" not in transcript
     sites = [f for f in transcript["protein_features"] if f.get("uniprot_accession") == "Q9UHK6"]
-    assert {f["start"] for f in sites if f["feature_type"] == "active_site"} == {122, 152}
+    assert {f["start"] for f in sites if f["feature_type"] == "active_site"} == {122, 152}, (
+        f"Missing AMACR UniProt active-site residues 122 and 152 in {human_reference_db.path}"
+    )
     assert {(f["start"], f["end"]) for f in sites if f["feature_type"] == "binding_site"} == {
         (36, 36),
         (55, 58),
@@ -366,8 +426,6 @@ def test_built_slc45a2_amacr_evaluates_sites_in_final_product(
 ) -> None:
     from .test_fusion import _breakpoint_after_exon
 
-    if human_reference_db.metadata.get("feature_annotation_version") != "2":
-        pytest.skip("Reprocess the built database to add reviewed UniProt features")
     slc45a2 = human_reference_db.get_transcript("ENST00000296589")
     amacr = human_reference_db.get_transcript("ENST00000335606")
     assert "error" not in slc45a2 and "error" not in amacr
@@ -383,7 +441,9 @@ def test_built_slc45a2_amacr_evaluates_sites_in_final_product(
     assert "error" not in result
     features = [f for f in result["domains"] if f.get("uniprot_accessions") == ["Q9UHK6"]]
     active = [f for f in features if f["domain_type"] == "active_site"]
-    assert {f["start"] for f in active} == {122, 152}
+    assert {f["start"] for f in active} == {122, 152}, (
+        f"Missing AMACR UniProt active-site residues 122 and 152 in {human_reference_db.path}"
+    )
     assert all(f["breakpoint_based_status"] == "included" for f in active)
     assert all(f["post_splicing_status"] == "preserved" for f in active)
     assert all("preserved" in (f["post_translation_status"] or "").split("/") for f in active)
@@ -394,3 +454,21 @@ def test_built_slc45a2_amacr_evaluates_sites_in_final_product(
     assert {f["domain_type"] for f in result["domains"] if f["interpro_id"] == "IPR050509"} == {
         "family"
     }
+
+
+@pytest.mark.parametrize(
+    "check",
+    [
+        test_built_amacr_has_verified_functional_sites,
+        test_built_slc45a2_amacr_evaluates_sites_in_final_product,
+    ],
+)
+def test_built_checks_reject_reference_missing_uniprot(
+    check, bundled_reference_db: ReferenceDatabase
+) -> None:
+    """A reference missing required annotations must fail, never skip them."""
+    transcript = bundled_reference_db.get_transcript("ENST00000335606")
+    assert not any(f.get("uniprot_accession") == "Q9UHK6" for f in transcript["protein_features"])
+    with pytest.raises(AssertionError, match="Missing AMACR UniProt active-site residues") as error:
+        check(bundled_reference_db)
+    assert str(bundled_reference_db.path) in str(error.value)

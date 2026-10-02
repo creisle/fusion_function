@@ -1,6 +1,6 @@
 # fusion_function
 
-![Coverage](https://raw.githubusercontent.com/OWNER/fusion_function/badges/badges/main/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/creisle/fusion_function/badges/badges/main/coverage.svg)
 
 Predict fusion reading frames and retained, disrupted, or excluded functional protein features from human GRCh38 transcript breakpoints. Annotation uses a preprocessed local SQLite reference and makes no network requests. Preparation uses tqdm progress bars.
 
@@ -16,7 +16,7 @@ fusion-function prepare-data
 fusion-function prepare-data --release 116
 ```
 
-The setup command downloads Ensembl core table dumps and genomic/peptide FASTA, imports them into SQLite, and precomputes exon/CDS coordinates, protein-feature mappings, canonical splice-site windows, and exact feature-group membership. Preparation commands also download InterPro entry names/types and reviewed human UniProt features by default, including `--preprocess-only`. Progress is logged throughout. The complete human reference needs several GB of downloads and working space.
+The setup command downloads Ensembl core table dumps and genomic/peptide FASTA, imports them into SQLite, and precomputes exon/CDS coordinates, protein-feature mappings, and canonical splice-site windows. Preparation commands also download InterPro entry names/types and reviewed human UniProt features by default, including `--preprocess-only`. Progress is logged throughout. The complete human reference needs several GB of downloads and working space.
 
 The default database location is:
 
@@ -32,9 +32,9 @@ completed preprocessing are reused. Interrupted FASTA imports reuse committed
 records from unchanged input; an unfinished preprocessing transaction restarts.
 The final reference is published only after integrity checking succeeds.
 
-### Upgrade an existing database
+### Reference preparation
 
-A database created by the earlier standalone script remains compatible. Add InterPro metadata and regenerate the derived tables without downloading Ensembl again:
+Regenerate derived annotations from imported Ensembl tables and sequences:
 
 ```bash
 fusion-function prepare-data --preprocess-only /path/to/ensembl.sqlite
@@ -46,9 +46,9 @@ Reviewed human UniProt domains, catalytic sites, binding sites and motifs are do
 
 UniProt features require a protein cross-reference and an exact whole-protein sequence match against Ensembl peptide FASTA. Explicitly described isoforms are reconstructed from UniProt splice variants. Features overlapping changed residues, uncertain coordinates, and unmappable isoforms are omitted; unchanged features are shifted when necessary. Match/mismatch counts appear in the build log. Evidence codes and sources accompany the features.
 
-The output retains its `domains` key, but `domain_type` now also includes `family`, `homologous_superfamily`, and `motif`. PANTHER subfamily names retain their actual `family` type. Gene3D/SUPERFAMILY structural superfamilies are included. Different annotation boundaries remain separate; only identical identities and intervals are combined. Each output feature includes `sources` and `feature_ids`. Retained sites or structural annotations do not establish retained enzyme activity.
+The `domains` list includes domains, families, homologous superfamilies, motifs, active sites, binding sites and conserved sites. PANTHER subfamily names retain their actual `family` type. Gene3D/SUPERFAMILY structural superfamilies are included. Different annotation boundaries remain separate; only identical identities and intervals are combined. Each output feature includes `sources` and `feature_ids`. Retained sites or structural annotations do not establish retained enzyme activity.
 
-To add UniProt features to an existing database, run the reprocessing command above. This reuses imported Ensembl tables and sequences; it does not download or import the genome again. New full builds have 24 numbered steps; reprocessing has four.
+Full builds have 24 numbered steps; regeneration of derived annotations has four.
 
 ## Annotate a fusion
 
@@ -87,13 +87,13 @@ with ReferenceDatabase(release=116) as reference:
 
 Default calls also reuse one SQLite connection per thread and cache at most 64 decompressed 1 MiB genome chunks. Use separate readers per worker thread/process. `close_default_reference()` releases the current thread's automatic reader. Full transcript sequences are not duplicated in the database or retained in this cache.
 
-Results contain `frame_status`, `domains`, and a `translation_start` summary mapping initiating transcript IDs to status strings. Alternative product outcomes are slash-separated. Domain fields cover retention, splicing, frame, and premature termination. The former HTTP `session=` parameter has been removed. `inserted_sequence` remains supported; reference options are keyword-only.
+Results contain `frame_status`, `domains`, and a `translation_start` summary mapping initiating transcript IDs to status strings. Alternative product outcomes are slash-separated. Domain fields cover retention, splicing, frame, and premature termination. `inserted_sequence` supplies nucleotides at the fusion junction; reference options are keyword-only.
 
 ## Reference limitations
 
 Only human GRCh38 is supported. Breakpoint-dependent clipping, splice-product construction, frame comparison, and stop-codon detection remain runtime calculations. Unsupported transcript models, missing sequences, and CDS/peptide length mismatches are recorded in `ff_transcripts` with `status='error'`; noncoding transcripts return an error through the annotation API. Sequence-edited models are not silently corrected.
 
-Preparation downloads PANTHER's human classification file for the version recorded in Ensembl's analysis metadata. Exact UniProt protein cross-references and matching PANTHER family IDs supply the subfamily names used by the existing family feature logic. No gene-wide propagation or new domain intervals are inferred. The bulk lookup and source checksum are saved in the database; annotation makes no PANTHER API calls. Use `--panther-classifications FILE` for a local classification file. Member features without a resolved InterPro entry retain their source annotation; entry types are not guessed from the source database.
+Preparation downloads PANTHER's human classification file for the version recorded in Ensembl's analysis metadata. Exact UniProt protein cross-references and matching PANTHER family IDs supply the subfamily names used by the existing family feature logic. No gene-wide propagation or new domain intervals are inferred. The bulk lookup and source checksum are saved in the database; annotation makes no PANTHER API calls. Use `--panther-classifications FILE` for a local classification file. Member features without a resolved InterPro entry remain in the raw transcript annotations. The final `domains` list requires a recognized feature type; types are not guessed from the source database.
 
 ## Tests and documentation
 
@@ -102,7 +102,7 @@ pip install --group dev
 pytest
 ```
 
-Tests use a small, offline SQLite fixture converted from the supplied response cache, complete legacy fusion outputs, synthetic preprocessing fixtures, and network blocking. The sparse regression fixture is not a production reference and does not represent the whole genome or a verified Ensembl release. A full human FTP-to-database build still needs validation on production data.
+Tests use a small, offline SQLite fixture converted from the supplied response cache, complete fusion regression snapshots, synthetic preprocessing fixtures, and network blocking. The sparse regression fixture is not a production reference and does not represent the whole genome or a verified Ensembl release. Tests against a completed human reference run when one is available locally.
 
 The original integration cases run against both references, with `[bundled]` and `[built]` test IDs. This includes SLC45A2::AMACR and the PANTHER enrichment assertions; feature types and exact boundaries are tested for both references. The bundled cases need no reference build. Built cases and the additional full-reference checks run automatically when a completed human GRCh38 database is available in the default cache, including a cache set with `FUSION_FUNCTION_CACHEDIR`. The newest installed release is selected. `FUSION_FUNCTION_DB` selects an existing database, and `--human-reference-db` overrides that selection:
 

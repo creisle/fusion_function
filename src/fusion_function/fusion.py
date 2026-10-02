@@ -49,13 +49,6 @@ TRANSLATION_START_STATUS_ORDER = (
 )
 
 
-class ProductSpliceSite(TypedDict):
-    type: SpliceSiteType
-    side: FusionSideName
-    transcript_id: str
-    exon_number: int
-
-
 class CodingFragment(TypedDict):
     side: FusionSideName
     transcript_id: str
@@ -66,12 +59,9 @@ class CodingFragment(TypedDict):
 
 
 class SpliceProduct(TypedDict):
-    product_index: int
-    transcript_length: int
     translation_start: int | None
     stop_position: int | None
     frame_status: FrameStatus
-    splice_sites: list[ProductSpliceSite]
     coding_fragments: list[CodingFragment]
     translation_start_source: NotRequired[Literal["alternative", "not_found"]]
     start_status: NotRequired[TranslationStartStatus]
@@ -423,12 +413,7 @@ def _find_stop_position(sequence: str, translation_start: int | None) -> int | N
 
 
 def _build_splice_product(
-    product_index: int,
-    layout: FusionLayout,
-    splice_pattern: list[LayoutSpliceSite],
-    *,
-    search_for_start: bool = False,
-    validate_native_start: bool = False,
+    layout: FusionLayout, splice_pattern: list[LayoutSpliceSite]
 ) -> SpliceProduct:
     """Construct one spliced fusion transcript and determine frame and stop."""
     if len(splice_pattern) % 2:
@@ -478,16 +463,15 @@ def _build_splice_product(
         for fragment in coding_fragments
         if fragment["source_cds_start"] <= 1 <= fragment["source_cds_end"]
     ]
-    if search_for_start or validate_native_start:
-        native_candidates = [
-            (position, transcript_id)
-            for position, transcript_id in native_candidates
-            if sequence[position - 1 : position + 2] == "ATG"
-        ]
+    native_candidates = [
+        (position, transcript_id)
+        for position, transcript_id in native_candidates
+        if sequence[position - 1 : position + 2] == "ATG"
+    ]
     translation_start, start_transcript_id = next(iter(native_candidates), (None, None))
     start_source: Literal["alternative", "not_found"] | None = None
     native_start_retained = translation_start is not None
-    if translation_start is None and search_for_start and coding_fragments:
+    if translation_start is None and coding_fragments:
         # Search after splicing, in any phase. Choosing the earliest retained ATG
         # is a heuristic; compatibility with the original protein is checked
         # separately. With no retained CDS there are no original domains to translate.
@@ -495,20 +479,9 @@ def _build_splice_product(
         translation_start = start_index + 1 if start_index >= 0 else None
         start_source = "alternative" if translation_start is not None else "not_found"
     result: SpliceProduct = {
-        "product_index": product_index,
-        "transcript_length": product_position - 1,
         "translation_start": translation_start,
         "stop_position": _find_stop_position(sequence, translation_start),
         "frame_status": _get_product_frame_status(translation_start, coding_fragments),
-        "splice_sites": [
-            {
-                "type": site["type"],
-                "side": site["side"],
-                "transcript_id": site["transcript_id"],
-                "exon_number": site["exon_number"],
-            }
-            for site in splice_pattern
-        ],
         "coding_fragments": coding_fragments,
     }
     if start_source is not None:
@@ -519,7 +492,7 @@ def _build_splice_product(
         "native_start_retained"
         if native_start_retained
         else "native_start_lost"
-        if not coding_fragments or not search_for_start
+        if not coding_fragments
         else "alternative_start_found"
         if translation_start is not None
         else "alternative_start_not_found"
@@ -716,11 +689,6 @@ def _resolve_feature_metadata(
             }
         )
     return resolved
-
-
-def _overlap(start1: int, end1: int, start2: int, end2: int) -> int:
-    """Return overlap between two inclusive intervals."""
-    return max(0, min(end1, end2) - max(start1, start2) + 1)
 
 
 def _aggregate_feature_group(features: list[ResolvedAnnotatedProteinFeature]) -> AggregatedDomain:
@@ -997,27 +965,20 @@ def annotate_fusion_domains(
     if can_reconstruct:
         layout = _build_fusion_layout(sides[0], sides[1], inserted_sequence)
         splice_products = [
-            _build_splice_product(
-                index, layout, pattern, search_for_start=True, validate_native_start=True
-            )
-            for index, pattern in enumerate(_generate_splice_patterns(layout["splice_sites"]), 1)
+            _build_splice_product(layout, pattern)
+            for pattern in _generate_splice_patterns(layout["splice_sites"])
         ]
         products_by_side = {side["side"]: splice_products for side in sides}
     else:
         for side in sides:
             layout = _build_retained_side_layout(side)
             products = [
-                _build_splice_product(
-                    index, layout, pattern, search_for_start=True, validate_native_start=True
-                )
-                for index, pattern in enumerate(
-                    _generate_splice_patterns(layout["splice_sites"]), 1
-                )
+                _build_splice_product(layout, pattern)
+                for pattern in _generate_splice_patterns(layout["splice_sites"])
             ]
             products_by_side[side["side"]] = products
             splice_products.extend(products)
-    # Older prepared databases contain overlap-based groups. Derive exact keys
-    # from their raw features too, so new boundaries/types work without a rebuild.
+    # Combine identical source intervals; different boundaries remain separate.
     grouped: dict[tuple[object, ...], list[ResolvedAnnotatedProteinFeature]] = {}
     for side in sides:
         features = _resolve_feature_metadata(

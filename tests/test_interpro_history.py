@@ -49,7 +49,9 @@ def test_archived_types_are_recovered_and_remain_available_offline(tmp_path, mon
     assert source["url"] == data.INTERPRO_RELEASES_URL + "109.0/entry.list"
     db.close()
     monkeypatch.setattr(
-        data, "download", lambda *_: pytest.fail("Offline reprocessing downloaded metadata")
+        data,
+        "download",
+        lambda url, directory: pytest.fail("Offline reprocessing downloaded metadata"),
     )
     assert (
         data.main(
@@ -81,11 +83,30 @@ def test_archived_types_are_recovered_and_remain_available_offline(tmp_path, mon
 def test_current_metadata_takes_precedence_without_archive_lookup(tmp_path, monkeypatch):
     db = fixture(tmp_path / "reference.sqlite")
     current = entry_list(tmp_path / "current.list", "IPR1\tDomain\tCurrent entry\n")
-    monkeypatch.setattr(data, "listing", lambda *_: pytest.fail("Unnecessary archive lookup"))
+    monkeypatch.setattr(data, "listing", lambda url: pytest.fail("Unnecessary archive lookup"))
     data.preprocess_reference(db, current, interpro_archive_cache=tmp_path / "metadata")
     assert db.execute("SELECT entry_type FROM ff_interpro WHERE interpro_id='IPR1'").fetchone() == (
         "domain",
     )
+    db.close()
+
+
+@pytest.mark.parametrize(
+    "logic_name,database", [("alphafold", "UniProt"), ("other", "AlphaFold"), ("sifts", "PDB")]
+)
+def test_structure_only_accessions_do_not_require_interpro_metadata(
+    tmp_path, monkeypatch, logic_name: str, database: str
+) -> None:
+    """Unresolved structure accessions must not fail functional preprocessing."""
+    db = fixture(tmp_path / "reference.sqlite")
+    db.execute("ALTER TABLE ensembl_analysis ADD COLUMN db TEXT")
+    db.execute("INSERT INTO ensembl_analysis VALUES (2,?,?)", (logic_name, database))
+    db.execute("INSERT INTO ensembl_protein_feature VALUES (999,1,1,334,'STRUCTURE','Structure',2)")
+    db.execute("INSERT INTO ensembl_interpro VALUES ('IPR_MISSING','STRUCTURE')")
+    current = entry_list(tmp_path / "current.list", "IPR1\tDomain\tCurrent entry\n")
+    monkeypatch.setattr(data, "listing", lambda url: set())
+    counts = data.preprocess_reference(db, current, interpro_archive_cache=tmp_path / "metadata")
+    assert counts == {"ready": 2, "noncoding": 1, "error": 1, "protein_features": 4}
     db.close()
 
 
@@ -99,7 +120,9 @@ def test_unresolved_archive_metadata_fails_before_transcript_loop_and_rolls_back
     incomplete = entry_list(tmp_path / "incomplete.list", "IPR001423\t\tIncomplete\n")
     entry_list(archive, "IPR1\tDomain\tUnrelated\n")
     monkeypatch.setattr(
-        data, "reference_structure", lambda *_: pytest.fail("Transcript loop started")
+        data,
+        "reference_structure",
+        lambda transcript, exons, translation: pytest.fail("Transcript loop started"),
     )
     with pytest.raises(ValueError, match="transcript preprocessing has not started"):
         data.preprocess_reference(db, incomplete, interpro_archive_cache=tmp_path / "metadata")

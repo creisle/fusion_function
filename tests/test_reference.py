@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from fusion_function import ReferenceDatabase, annotate_fusion_domains, close_default_reference
+from fusion_function import ReferenceDatabase, annotate_fusion_domains
 from fusion_function.cli import main
 from fusion_function.reference import get_reference, resolve_database
 
@@ -13,8 +13,8 @@ FIXTURE = Path(__file__).parent / "data/reference.sqlite"
 GOLDEN = json.loads((Path(__file__).parent / "data/fusion_golden.json").read_text())
 
 
-@pytest.mark.parametrize("case", GOLDEN, ids=[f"legacy-{i + 1}" for i in range(len(GOLDEN))])
-def test_complete_legacy_results(case, reference_db):
+@pytest.mark.parametrize("case", GOLDEN, ids=[f"fusion-{i + 1}" for i in range(len(GOLDEN))])
+def test_complete_regression_results(case, reference_db):
     assert (
         annotate_fusion_domains(*case["args"], **case["kwargs"], reference=reference_db)
         == case["result"]
@@ -82,6 +82,19 @@ def test_reject_unprocessed_or_wrong_species(tmp_path):
         db.execute("UPDATE build_metadata SET value='homo_sapiens' WHERE key='species'")
         db.execute("DELETE FROM build_metadata WHERE key='preprocessing_version'")
     with pytest.raises(ValueError, match="preprocess-only"):
+        ReferenceDatabase(path)
+
+
+@pytest.mark.parametrize("assembly", [None, "GRCh37"])
+def test_assembly_metadata_is_required(tmp_path, assembly):
+    path = tmp_path / "reference.sqlite"
+    shutil.copyfile(FIXTURE, path)
+    with sqlite3.connect(path) as db:
+        if assembly is None:
+            db.execute("DELETE FROM build_metadata WHERE key='assembly'")
+        else:
+            db.execute("UPDATE build_metadata SET value=? WHERE key='assembly'", (assembly,))
+    with pytest.raises(ValueError, match="GRCh38"):
         ReferenceDatabase(path)
 
 

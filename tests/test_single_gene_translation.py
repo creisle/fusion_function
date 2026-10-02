@@ -91,7 +91,6 @@ def prepared_reference(cds, strand, *, intron=None, utr5="CCC", features=FEATURE
         "cds_blocks": cds_blocks,
         "splice_sites": sites,
         "protein_features": protein_features,
-        "feature_groups": [[i] for i in range(len(features))],
     }
     return PreparedReference(transcript), genomic
 

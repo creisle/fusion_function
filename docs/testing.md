@@ -10,7 +10,7 @@ From the package root, run `pytest`. The full-reference tests automatically use 
 pytest -m human_reference -v
 ```
 
-The original integration tests in `test_fusion.py` and `test_ensembl.py` each run twice: `[bundled]` uses the original offline fixture and `[built]` uses the completed reference. Assertions are identical for both variants, including SLC45A2::AMACR racemase preservation and AMACR PANTHER subfamily metadata. Missing features in the built reference produce test failures. Complete output snapshots remain tied to the bundled reference; they were updated for the expanded feature types, exact source boundaries and provenance fields. Existing frame and translation-start predictions are unchanged.
+The original integration tests in `test_fusion.py` and `test_ensembl.py` each run twice: `[bundled]` uses the original offline fixture and `[built]` uses the completed reference. Assertions are identical for both variants, including retention of the AMACR family match in SLC45A2::AMACR and AMACR PANTHER subfamily metadata. Missing features in the built reference produce test failures. Complete output snapshots remain tied to the bundled reference; they were updated for the expanded feature types, exact source boundaries and provenance fields. Existing frame and translation-start predictions are unchanged.
 
 To run SLC45A2::AMACR against both sources, or only the build:
 
@@ -35,7 +35,7 @@ The selected database must be a completed, preprocessed reference. These tests o
 - InterPro metadata for their protein features.
 - BCR–ABL1 fusion annotation using the supplied full reference.
 
-The 55 built-reference cases (39 integration cases plus 16 additional checks) are skipped when no local reference is available. An explicitly configured missing database or an invalid selected database fails the tests instead of being silently skipped. No transcript data is mocked in the built variants. They exercise representative transcript and fusion paths; sequence-region and count checks cover the entire selected database. They do not claim exhaustive biological validation of every possible fusion.
+The 63 built-reference cases are skipped when no local reference is available. An explicitly configured missing database or an invalid selected database fails the tests instead of being silently skipped. No transcript data is mocked in the built variants. They exercise representative transcript and fusion paths; sequence-region and count checks cover the entire selected database. They do not claim exhaustive biological validation of every possible fusion.
 
 To run all tests against a specific reference:
 
@@ -68,6 +68,31 @@ Late N-terminal breakpoint cases on both strands verify that all domains can rem
 
 Single-gene UTR cases cover C/5' UTR, C/3' UTR, N/5' UTR, and N/3' UTR on both strands with the other transcript explicitly None. Start-loss and domain-cut cases also run against the installed reference. Controlled sequence fixtures verify native-start retention, next-ATG initiation after splicing, out-of-frame first starts, no remaining ATG, domains before or overlapping the selected start, and downstream premature termination.
 
-UniProt tests run offline using captured human AMACR XML and independently downloaded canonical/isoform protein sequences. They verify sequence identity, described isoform reconstruction, omission of changed/fuzzy intervals, evidence, accession mapping, genomic coordinates, retention of catalytic versus substrate-binding sites, offline reuse and rollback. Synthetic tests exercise the CLI's default download and local-file override. The optional built-reference AMACR site test runs after the local database has been reprocessed to `feature_annotation_version=2`; older builds skip that added test. No full human reference is constructed or downloaded by pytest.
+UniProt tests run offline using captured human AMACR XML and independently downloaded canonical/isoform protein sequences. They verify sequence identity, described isoform reconstruction, omission of changed/fuzzy intervals, evidence, accession mapping, genomic coordinates, retention of catalytic versus substrate-binding sites, offline reuse and rollback. Synthetic tests exercise the CLI's default download and local-file override. The two built-reference UniProt checks verify actual AMACR annotations and their status in the fusion product. A selected database missing these annotations fails; these checks skip only when no built reference is available. Lightweight regression tests verify that missing annotations fail instead of silently skipping. No full human reference is constructed or downloaded by pytest.
 
 The AMACR fixtures were captured from `https://rest.uniprot.org/uniprotkb/Q9UHK6.xml`, its canonical sequence, and `https://rest.uniprot.org/uniprotkb/Q9UHK6-5.fasta` on 2026-10-01. They are small source captures, not a built human reference.
+
+Repeated-preparation tests verify UniProt lookup reuse and invalidation when the
+XML, mapping implementation, Ensembl source checksums, release or lookup table
+changes. References without source checksums are reverified. Error-summary tests
+check grouping, sample limits and read-only inspection of existing references
+without a saved summary.
+
+Partial-codon regressions cover both strands, missing one or two leading bases,
+presence/absence of a terminal stop codon, and single N- or C-terminal partners.
+They independently check per-base genomic feature mapping, incomplete first
+residues, alternative initiation and preserved downstream features. Built-reference
+tests check the three reported release-100/116 transcripts; older prepared models
+that still store their length errors fail these checks.
+
+Structure-filter tests verify that AlphaFold/SIFTS mappings are omitted whether
+their intervals fit the peptide or exceed it, including differing pipeline and
+database labels. Actual functional features remain unchanged, and invalid domain
+coordinates still reject the transcript. Three built-reference checks cover the
+reported AlphaFold failures; older prepared models storing these errors fail.
+
+Compact-storage tests compare all 15 complete fusion regression outputs against
+compressed transcript models, check ordinary row storage and readable JSON
+errors, and reject unknown codecs. Existing plain-JSON fixtures remain readable.
+Rollback checks exercise the new storage while preserving the prior reference
+and the caller's secure-delete, journal and synchronous settings.

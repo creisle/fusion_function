@@ -9,7 +9,7 @@ def fixture(path):
     definitions = {
         "transcript": "transcript_id INTEGER, stable_id TEXT, version INTEGER, seq_region_id INTEGER, seq_region_start INTEGER, seq_region_end INTEGER, seq_region_strand INTEGER, canonical_translation_id INTEGER, is_current INTEGER",
         "translation": "translation_id INTEGER, transcript_id INTEGER, stable_id TEXT, version INTEGER, seq_start INTEGER, start_exon_id INTEGER, seq_end INTEGER, end_exon_id INTEGER",
-        "exon": "exon_id INTEGER, seq_region_id INTEGER, seq_region_start INTEGER, seq_region_end INTEGER, seq_region_strand INTEGER",
+        "exon": "exon_id INTEGER, seq_region_id INTEGER, seq_region_start INTEGER, seq_region_end INTEGER, seq_region_strand INTEGER, phase INTEGER, end_phase INTEGER",
         "exon_transcript": "exon_id INTEGER, transcript_id INTEGER, rank INTEGER",
         "seq_region": "seq_region_id INTEGER, name TEXT, coord_system_id INTEGER, length INTEGER",
         "coord_system": "coord_system_id INTEGER, version TEXT",
@@ -30,7 +30,9 @@ def fixture(path):
         starts = [(100, 111), (148, 159)] if strand == 1 else [(148, 159), (100, 111)]
         for rank, (a, b) in enumerate(starts, 1):
             eid = tid * 10 + rank
-            db.execute("INSERT INTO ensembl_exon VALUES (?,?,?,?,?)", (eid, 1, a, b, strand))
+            db.execute(
+                "INSERT INTO ensembl_exon VALUES (?,?,?,?,?,?,?)", (eid, 1, a, b, strand, -1, -1)
+            )
             db.execute("INSERT INTO ensembl_exon_transcript VALUES (?,?,?)", (eid, tid, rank))
         db.execute(
             "INSERT INTO ensembl_translation VALUES (?,?,?,?,?,?,?,?)",
@@ -42,7 +44,7 @@ def fixture(path):
                 (fid, tid, a, b, hit, "member name", 1),
             )
     db.execute("INSERT INTO ensembl_transcript VALUES (3,'ENST00000000003',1,1,200,211,1,NULL,1)")
-    db.execute("INSERT INTO ensembl_exon VALUES (31,1,200,211,1)")
+    db.execute("INSERT INTO ensembl_exon VALUES (31,1,200,211,1,-1,-1)")
     db.execute("INSERT INTO ensembl_exon_transcript VALUES (31,3,1)")
     db.execute("INSERT INTO ensembl_analysis VALUES (1,'Pfam')")
     db.executemany("INSERT INTO ensembl_interpro VALUES (?,?)", [("IPR1", "PF1"), ("IPR1", "PF2")])
@@ -66,6 +68,7 @@ def fixture(path):
             ("release", "116"),
             ("assembly", "GRCh38"),
             ("sequence_chunk_size", str(e.CHUNK_SIZE)),
+            ("sequence_codec", "zlib"),
         ],
     )
     db.commit()

@@ -16,9 +16,29 @@ def bars(monkeypatch):
     original = data.progress
     created = []
 
-    def recording(*args, **kwargs):
-        kwargs.update(disable=False, file=io.StringIO())
-        bar = original(*args, **kwargs)
+    def recording(
+        iterable=None,
+        *,
+        total=None,
+        desc="",
+        unit="it",
+        unit_scale=False,
+        unit_divisor=1000,
+        disable=None,
+        file=None,
+        bar_format=None,
+    ):
+        bar = original(
+            iterable,
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+            disable=False,
+            file=io.StringIO(),
+            bar_format=bar_format,
+        )
         created.append(bar)
         return bar
 
@@ -114,14 +134,35 @@ def test_sqlite_timer_refreshes_during_blocked_execute_and_stops(monkeypatch, ba
     caller = threading.get_ident()
     original = data.progress
 
-    def recording(*args, **kwargs):
-        bar = original(*args, **kwargs)
+    def recording(
+        iterable=None,
+        *,
+        total=None,
+        desc="",
+        unit="it",
+        unit_scale=False,
+        unit_divisor=1000,
+        disable=None,
+        file=None,
+        bar_format=None,
+    ):
+        bar = original(
+            iterable,
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+            disable=disable,
+            file=file,
+            bar_format=bar_format,
+        )
         refresh = bar.refresh
 
-        def tracked_refresh(*args, **kwargs):
+        def tracked_refresh(nolock=False, lock_args=None):
             if threading.get_ident() != caller:
                 refreshed.set()
-            return refresh(*args, **kwargs)
+            return refresh(nolock=nolock, lock_args=lock_args)
 
         bar.refresh = tracked_refresh
         return bar
@@ -190,7 +231,9 @@ def test_preprocessing_labels_preparation_indexing_and_commit(tmp_path, caplog):
         data.preprocess_reference(db, entries)
     for phase in (
         "Preserve existing InterPro metadata",
-        "Replace previous derived transcript and InterPro tables",
+        "Drop previous ff_transcripts",
+        "Drop previous ff_interpro",
+        "Create derived transcript and InterPro tables",
         "Load InterPro names from Ensembl cross-references",
         "Read genome and protein sequence lengths",
         "Prepare ordered exon stream",

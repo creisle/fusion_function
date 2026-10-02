@@ -1092,8 +1092,10 @@ def test_kif5b_exon15_ret_exon12(reference_db: ReferenceDatabase) -> None:
 
 
 @pytest.mark.integration
-def test_slc45a2_exon2_amacr_exon2_retains_racemase_domain(reference_db: ReferenceDatabase) -> None:
-    """SLC45A2 exon 2 :: AMACR exon 2 retains the AMACR racemase domain."""
+def test_slc45a2_exon2_amacr_exon2_retains_racemase_feature(
+    reference_db: ReferenceDatabase,
+) -> None:
+    """SLC45A2 exon 2 :: AMACR exon 2 retains part of the AMACR family match."""
 
     slc45a2 = _get_transcript(GENE2TRANSCRIPT["SLC45A2"], reference_db)
 

@@ -12,6 +12,12 @@ if TYPE_CHECKING:
 Strand = Literal[-1, 1]
 
 
+class ProteinFeatureAnnotation(TypedDict):
+    name: str | None
+    entry_type: str | None
+    interpro_id: str | None
+
+
 class TranscriptExon(TypedDict):
     exon_number: int
     chromosome: str | None
@@ -118,9 +124,9 @@ class TranscriptProteinFeatureResult(TypedDict):
     premrna_sequence: NotRequired[str]
     transcript_exons: list[TranscriptExon]
     cds_blocks: list[CDSBlock]
+    cds_start_phase: NotRequired[int]
     protein_features: list[ProteinFeature]
     splice_sites: list[ReferenceSpliceSite]
-    feature_groups: list[list[int]]
     assembly_name: NotRequired[str | None]
 
 

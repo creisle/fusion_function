@@ -31,25 +31,140 @@ def test_preprocessing_strands_errors_and_metadata(tmp_path):
             minus["premrna_sequence"]
             == plus["premrna_sequence"].translate(str.maketrans("ACGT", "TGCA"))[::-1]
         )
-        assert plus["feature_groups"] == [[0], [1]]
+        assert [(f["start"], f["end"]) for f in plus["protein_features"]] == [(2, 5), (3, 5)]
         assert plus["protein_features"][0]["interpro_entry_type"] == "domain"
         assert "non-coding" in reader.get_transcript("ENST00000000003")["error"]
         assert "mismatch" in reader.get_transcript("ENST00000000004")["error"]
         assert reader.get_interpro_annotation("IPR1")["name"] == "Test domain"
+        summary = reader.transcript_error_summary()
+        assert summary == {
+            "CDS/peptide length mismatch": {"count": 1, "example_transcripts": ["ENST00000000004"]}
+        }
+        assert json.loads(reader.metadata["preprocessing_errors"]) == summary
+    with sqlite3.connect(path) as db:
+        db.execute("DELETE FROM build_metadata WHERE key='preprocessing_errors'")
+    with data.ReferenceReader(path) as reader:
+        assert reader.transcript_error_summary() == summary
 
 
-def test_preprocessing_is_atomic_and_reusable_without_downloads(tmp_path):
+@pytest.mark.parametrize(
+    "logic_name,database",
+    [
+        ("alphafold", None),
+        ("AlphaFold", "UniProt"),
+        ("structure_pipeline", "AlphaFold"),
+        ("sifts", None),
+        ("SIFTS", "PDB"),
+    ],
+)
+@pytest.mark.parametrize("end", [5, 334], ids=["in-bounds", "oversized"])
+def test_structure_mappings_leave_functional_models_unchanged(
+    tmp_path, logic_name: str, database: str | None, end: int
+) -> None:
+    """Structure intervals must neither become domains nor invalidate a model."""
+    db = fixture(tmp_path / "reference.sqlite")
+    entries = tmp_path / "entry.list"
+    entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
+    baseline_counts = data.preprocess_reference(db, entries)
+    baseline_models = list(db.execute("SELECT * FROM ff_transcripts ORDER BY transcript_id"))
+    db.execute("ALTER TABLE ensembl_analysis ADD COLUMN db TEXT")
+    db.execute("INSERT INTO ensembl_analysis VALUES (2,?,?)", (logic_name, database))
+    db.execute(
+        "INSERT INTO ensembl_protein_feature VALUES (999,1,1,?,'AF-Q5TH74-F1','Structure',2)",
+        (end,),
+    )
+    # A structure-only InterPro mapping must also stay outside the feature list.
+    db.execute("INSERT INTO ensembl_interpro VALUES ('IPR1','AF-Q5TH74-F1')")
+    assert data.preprocess_reference(db, entries) == baseline_counts
+    assert (
+        list(db.execute("SELECT * FROM ff_transcripts ORDER BY transcript_id")) == baseline_models
+    )
+    db.close()
+
+
+@pytest.mark.parametrize("start,end", [(0, 5), (2, 7)])
+def test_invalid_functional_feature_coordinates_still_reject_model(
+    tmp_path, start: int, end: int
+) -> None:
+    """Excluding structures must not hide malformed Pfam/domain intervals."""
+    path = tmp_path / "reference.sqlite"
+    db = fixture(path)
+    entries = tmp_path / "entry.list"
+    entries.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
+    db.execute(
+        "UPDATE ensembl_protein_feature SET seq_start=?,seq_end=? WHERE protein_feature_id=11",
+        (start, end),
+    )
+    counts = data.preprocess_reference(db, entries)
+    assert counts["ready"] == 1
+    assert counts["error"] == 2
+    db.close()
+    with data.ReferenceReader(path) as reader:
+        error = reader.get_transcript("ENST00000000001")["error"]
+        assert f"Protein feature falls outside peptide: Pfam PF1 {start}-{end}" in error
+        assert "peptide length 6" in error
+        assert reader.transcript_error_summary()["Protein feature falls outside peptide"] == {
+            "count": 1,
+            "example_transcripts": ["ENST00000000001"],
+        }
+
+
+def test_error_summary_groups_variable_details_and_limits_example_ids():
+    summary = {}
+    for number in range(8):
+        data._record_transcript_error(
+            summary,
+            f"ENST{number:011}",
+            f"CDS/peptide length mismatch: {number + 18} bp, 7 aa; possible sequence edits",
+        )
+    assert summary == {
+        "CDS/peptide length mismatch": {
+            "count": 8,
+            "example_transcripts": ["ENST00000000000", "ENST00000000001", "ENST00000000002"],
+        }
+    }
+
+
+@pytest.mark.parametrize("secure_delete", ["OFF", "ON", "FAST"])
+def test_preprocessing_is_atomic_and_reusable_without_downloads(tmp_path, secure_delete):
     path = tmp_path / "reference.sqlite"
     db = fixture(path)
     good = tmp_path / "entry.list"
     good.write_text("ENTRY_AC\tENTRY_TYPE\tENTRY_NAME\nIPR1\tDomain\tTest domain\n")
-    data.preprocess_reference(db, good)
-    before = list(db.execute("SELECT * FROM ff_transcripts"))
+    db.execute(f"PRAGMA secure_delete={secure_delete}")
+    original_secure_delete = db.execute("PRAGMA secure_delete").fetchone()[0]
+    transaction_settings = {
+        pragma: db.execute("PRAGMA " + pragma).fetchone()[0]
+        for pragma in ("journal_mode", "synchronous")
+    }
+    drops = []
+
+    def track_drop(statement):
+        if statement.startswith("DROP TABLE"):
+            drops.append((statement, db.execute("PRAGMA secure_delete").fetchone()[0]))
+
+    db.set_trace_callback(track_drop)
+    uniprot = uniprot_file(tmp_path)
+    data.preprocess_reference(db, good, uniprot_features=uniprot)
+    assert drops and all(setting == 0 for statement, setting in drops)
+    assert db.execute("PRAGMA secure_delete").fetchone()[0] == original_secure_delete
+    before = {
+        table: list(db.execute("SELECT * FROM " + table))
+        for table in ("ff_transcripts", "ff_interpro", "ff_uniprot_features", "build_metadata")
+    }
+    drops.clear()
     entries = tmp_path / "bad.tsv"
     entries.write_text("broken header\n")
     with pytest.raises(ValueError, match="InterPro TSV"):
-        data.preprocess_reference(db, entries)
-    assert list(db.execute("SELECT * FROM ff_transcripts")) == before
+        data.preprocess_reference(db, entries, uniprot_features=uniprot)
+    assert drops and all(setting == 0 for statement, setting in drops)
+    assert db.execute("PRAGMA secure_delete").fetchone()[0] == original_secure_delete
+    for table, records in before.items():
+        assert list(db.execute("SELECT * FROM " + table)) == records
+    for pragma, setting in transaction_settings.items():
+        assert db.execute("PRAGMA " + pragma).fetchone()[0] == setting
+    assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    db.set_trace_callback(None)
     db.close()
     assert (
         data.main(
@@ -114,12 +229,12 @@ def test_fasta_resume_reuses_complete_records_and_discards_orphan_chunks(tmp_pat
     compress = data.zlib.compress
     calls = 0
 
-    def interrupt(chunk, **kwargs):
+    def interrupt(chunk, level=-1, *, wbits=data.zlib.MAX_WBITS):
         nonlocal calls
         calls += 1
         if calls == 3:
             raise KeyboardInterrupt
-        return compress(chunk, **kwargs)
+        return compress(chunk, level=level, wbits=wbits)
 
     monkeypatch.setattr(data.zlib, "compress", interrupt)
     database = tmp_path / "partial.sqlite"
@@ -136,9 +251,9 @@ def test_fasta_resume_reuses_complete_records_and_discards_orphan_chunks(tmp_pat
     )
     db.commit()
 
-    def require_reuse(chunk, **kwargs):
+    def require_reuse(chunk, level=-1, *, wbits=data.zlib.MAX_WBITS):
         assert chunk != b"ACGT", "Recompressed an already complete sequence"
-        return compress(chunk, **kwargs)
+        return compress(chunk, level=level, wbits=wbits)
 
     monkeypatch.setattr(data.zlib, "compress", require_reuse)
     assert data.import_fasta(db, "dna", path, resume=True) == 2

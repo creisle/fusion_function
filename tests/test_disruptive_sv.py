@@ -213,7 +213,7 @@ def test_single_known_partner_is_assumed_disruptive(reference_db, known_slot, pa
 def test_same_terminus_pair_raises_before_database_lookup(
     monkeypatch, terminus, same_transcript, with_breakpoints
 ):
-    def unexpected_lookup(**kwargs):
+    def unexpected_lookup(*, reference=None, database=None, release=None):
         pytest.fail("Unsupported pair must be rejected before loading a reference")
 
     monkeypatch.setattr("fusion_function.fusion.get_reference", unexpected_lookup)
@@ -253,7 +253,7 @@ def test_c_n_order_matches_n_c_product(reference_db):
     ],
 )
 def test_missing_required_input_returns_error_before_database_lookup(monkeypatch, arguments):
-    def unexpected_lookup(**kwargs):
+    def unexpected_lookup(*, reference=None, database=None, release=None):
         pytest.fail("Incomplete event should be rejected before loading a reference")
 
     monkeypatch.setattr("fusion_function.fusion.get_reference", unexpected_lookup)

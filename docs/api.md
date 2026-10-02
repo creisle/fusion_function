@@ -92,7 +92,7 @@ result = annotate_fusion_domains(
 
 ### `reference`, `database`, and `release`
 
-Reference data are read locally. Reuse a `ReferenceDatabase` through `reference=`, or choose a file through `database=` and optionally validate its `release=`. A supplied reader cannot be combined with the other reference options. Without these arguments, the newest prepared local release is discovered under the default cache; `FUSION_FUNCTION_DB` overrides discovery. The removed `session=` parameter is no longer accepted.
+Reference data are read locally. Reuse a `ReferenceDatabase` through `reference=`, or choose a file through `database=` and optionally validate its `release=`. A supplied reader cannot be combined with the other reference options. Without these arguments, the newest prepared local release is discovered under the default cache; `FUSION_FUNCTION_DB` overrides discovery.
 
 See [`reference.md`](reference.md).
 
@@ -249,7 +249,7 @@ domain remains disrupted. Completely excluded features have no downstream status
 | `preserved` | Retained portion remains in the expected coding frame without premature termination |
 | `frame_disrupted` | Feature is retained but translated in an incompatible frame |
 | `translation_start_disrupted` | The selected start falls within the retained feature, omitting its beginning |
-| `translation_start_excluded` | The feature lies before the selected start, or no ATG is found by the C-terminal heuristic |
+| `translation_start_excluded` | The feature lies before the selected start, or no alternative ATG is found after native-start loss |
 | `premature_termination_disrupted` | Translation terminates within the retained portion |
 | `premature_termination_excluded` | Translation terminates before the retained portion |
 | `None` | Sequence-level status is not applicable or not evaluated |

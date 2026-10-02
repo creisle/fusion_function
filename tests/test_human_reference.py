@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from fusion_function import annotate_fusion_domains
+from fusion_function import ReferenceDatabase, annotate_fusion_domains
 
 pytestmark = [pytest.mark.integration, pytest.mark.human_reference]
 
@@ -61,6 +61,34 @@ def test_complete_reference_metadata_and_counts(human_reference_db):
         row[0] for row in reference.db.execute("SELECT sequence_id FROM sequences WHERE kind='dna'")
     }
     assert primary <= stored
+
+
+@pytest.mark.parametrize(
+    "transcript_id,phase", [("ENST00000011700", 1), ("ENST00000084795", 2), ("ENST00000201961", 2)]
+)
+def test_missing_leading_codon_bases_in_built_reference(
+    human_reference_db: ReferenceDatabase, transcript_id: str, phase: int
+) -> None:
+    """Reported release-100/116 failures must become usable with correct offsets."""
+    transcript = human_reference_db.get_transcript(transcript_id, include_sequence=False)
+    assert "error" not in transcript, f"{transcript_id} remains unusable: {transcript}"
+    assert transcript["cds_start_phase"] == phase
+    assert transcript["cds_blocks"][0]["cds_start"] == phase + 1
+    length = sum(block["cds_end"] - block["cds_start"] + 1 for block in transcript["cds_blocks"])
+    assert length + phase == transcript["protein_length"] * 3 + 3
+
+
+@pytest.mark.parametrize("transcript_id", ["ENST00000003583", "ENST00000003912", "ENST00000005082"])
+def test_structure_mappings_do_not_reject_built_transcripts(
+    human_reference_db: ReferenceDatabase, transcript_id: str
+) -> None:
+    """Reported oversized AlphaFold mappings must not invalidate these models."""
+    transcript = human_reference_db.get_transcript(transcript_id, include_sequence=False)
+    assert "error" not in transcript, f"{transcript_id} remains unusable: {transcript}"
+    assert transcript["protein_length"] > 0
+    for feature in transcript["protein_features"]:
+        assert (feature["source"] or "").lower() not in {"alphafold", "sifts"}
+        assert 1 <= feature["start"] <= feature["end"] <= transcript["protein_length"]
 
 
 @pytest.mark.parametrize(

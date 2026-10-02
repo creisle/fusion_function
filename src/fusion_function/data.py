@@ -12,7 +12,8 @@ Set FUSION_FUNCTION_CACHEDIR or --cache-dir to change the cache root.
 Storage: ensembl_* tables preserve the FTP dump columns. DNA and peptides use
 independently compressed 1 MiB chunks. ff_transcripts stores prepared exon/CDS
 coordinates, splice windows and protein features; ff_interpro stores names and
-types. ff_uniprot_features stores sequence-verified reviewed human sites,
+types. Transcript models use compressed JSON; error messages remain plain JSON.
+ff_uniprot_features stores sequence-verified reviewed human sites,
 domains and motifs. Coordinates are 1-based and inclusive; CDS blocks follow transcript
 orientation, including on the negative strand. Pre-mRNA is reconstructed when
 requested, rather than stored for every transcript.
@@ -65,7 +66,8 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from itertools import groupby
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self, TypedDict, cast, overload
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Literal, Self, TextIO, TypedDict, cast, overload
 from xml.etree.ElementTree import ParseError
 
 from tqdm import tqdm
@@ -76,12 +78,12 @@ if TYPE_CHECKING:
 
     from .ensembl import (
         CDSBlock,
+        EnsemblError,
         GenomicSegment,
-        ProteinFeature,
+        ProteinFeatureAnnotation,
         ProteinFeatureResponse,
         TranscriptProteinFeatureResult,
     )
-    from .interpro import ProteinFeatureAnnotation
 
 
 # Raw SQL rows have different columns per source table; derived structures use
@@ -90,12 +92,19 @@ DatabaseRow = dict[str, Any]
 AnalysisMetadata = dict[int, tuple[str | None, str | None]]
 InterProMetadata = dict[str, tuple[str | None, str | None]]
 ChunkCache = OrderedDict[tuple[str, str, int], bytes]
+STRUCTURE_SOURCES = frozenset({"sifts", "alphafold"})
+TRANSCRIPT_PAYLOAD_CODEC = "zlib-json-v1"
 
 
 class SourceRecord(TypedDict):
     url: str
     sha256: str
     bytes: int
+
+
+class TranscriptErrorSummary(TypedDict):
+    count: int
+    example_transcripts: list[str]
 
 
 class CheckpointRecord(TypedDict):
@@ -184,12 +193,32 @@ class BuildSteps:
         )
 
 
-def progress(*args: Any, **kwargs: Any) -> tqdm:
+def progress(
+    iterable: Iterable[Any] | None = None,
+    *,
+    total: int | None = None,
+    desc: str = "",
+    unit: str = "it",
+    unit_scale: bool = False,
+    unit_divisor: int = 1000,
+    disable: bool | None = None,
+    file: TextIO | None = None,
+    bar_format: str | None = None,
+) -> tqdm:
     """Use compact, rate-limited bars; suppress terminal redraws in log files."""
-    for key, value in {"dynamic_ncols": True, "mininterval": 0.5, "disable": None}.items():
-        kwargs.setdefault(key, value)
-    kwargs["desc"] = STEP_PREFIX.get() + kwargs.get("desc", "")
-    return tqdm(*args, **kwargs)
+    return tqdm(
+        iterable,
+        total=total,
+        desc=STEP_PREFIX.get() + desc,
+        unit=unit,
+        unit_scale=unit_scale,
+        unit_divisor=unit_divisor,
+        disable=disable,
+        file=file,
+        bar_format=bar_format,
+        dynamic_ncols=True,
+        mininterval=0.5,
+    )
 
 
 def file_label(path: Path) -> str:
@@ -790,7 +819,7 @@ def fetch_sequence(
     return result
 
 
-# Streaming transcript models, coordinate mapping and feature groups.
+# Streaming transcript models and coordinate mapping.
 
 
 def dict_rows(
@@ -841,6 +870,8 @@ def reference_structure(
     Genomic positions remain on the reference strand. Pre-mRNA and CDS positions
     follow transcription direction; pre-mRNA includes introns, CDS does not.
     A missing translation produces a noncoding model with no CDS blocks.
+    Missing leading codon bases occupy peptide coordinates but have no genome
+    coordinates; the first CDS block starts after that offset.
     """
     strand = transcript["strand"]
     start, end = transcript["start"], transcript["end"]
@@ -863,7 +894,6 @@ def reference_structure(
         "cds_blocks": [],
         "protein_features": [],
         "splice_sites": [],
-        "feature_groups": [],
         "assembly_name": assembly,
     }
     for number, exon in enumerate(oriented, 1):
@@ -939,7 +969,17 @@ def reference_structure(
     if (strand == 1 and first_pos > last_pos) or (strand == -1 and first_pos < last_pos):
         raise ValueError("Translation start follows translation end")
     coding_lo, coding_hi = sorted((first_pos, last_pos))
-    cds_pos = 1
+    # A 5'-incomplete CDS starts partway through the first peptide codon.
+    # Ensembl pads that codon with `phase` unknown bases when translating.
+    # Keep those peptide coordinates, but map only bases present in the genome:
+    # starting at phase + 1 also prevents a missing native start being retained.
+    phase = first["phase"]
+    if phase not in {-1, 0, 1, 2}:
+        raise ValueError("Invalid translation start exon phase")
+    start_phase = max(0, phase)
+    if start_phase:
+        result["cds_start_phase"] = start_phase
+    cds_pos = start_phase + 1
     # Clip each exon to the coding span, then concatenate its CDS coordinates.
     for prepared_exon in result["transcript_exons"]:
         lo, hi = (
@@ -1013,16 +1053,6 @@ def protein_segments(
     return segments
 
 
-def reference_feature_groups(features: Sequence[ProteinFeature]) -> list[list[int]]:
-    """Group only identical intervals/identities; preserve source disagreements."""
-    from .ensembl import feature_identity
-
-    groups: dict[tuple[object, ...], list[int]] = {}
-    for index, feature in enumerate(features):
-        groups.setdefault(feature_identity(feature), []).append(index)
-    return list(groups.values())
-
-
 # Source compatibility checks and bulk protein annotation metadata.
 
 
@@ -1030,14 +1060,17 @@ def protein_analyses(db: sqlite3.Connection) -> AnalysisMetadata:
     """Use database names for feature sources, not Ensembl pipeline names.
 
     For example, logic_name='hmmpanther' describes how the analysis ran;
-    db='PANTHER' identifies the annotation source exposed by the former API.
+    db='PANTHER' identifies the annotation source stored with each feature.
     Small offline fixtures may have only logic_name, so retain that fallback.
+    Structure pipelines override database labels so their mappings can always
+    be excluded from functional annotations.
     """
     analyses = {}
     for row in dict_rows(db, "SELECT * FROM ensembl_analysis"):
         source = row.get("db") or row["logic_name"]
-        if (row["logic_name"] or "").lower() == "sifts":
-            source = "sifts"
+        logic_name = (row["logic_name"] or "").lower()
+        if logic_name in STRUCTURE_SOURCES:
+            source = logic_name
         if (source or "").lower() in {"panther", "hmmpanther"}:
             source = "PANTHER"
         analyses[row["analysis_id"]] = (source, row.get("db_version"))
@@ -1192,9 +1225,8 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
         )
     if metadata.get("species") != SPECIES:
         raise ValueError("Only human reference databases are supported")
-    # Earlier human-only builders omitted the assembly metadata key.
     if (
-        metadata.get("assembly", ASSEMBLY) != ASSEMBLY
+        metadata.get("assembly") != ASSEMBLY
         or not db.execute(
             "SELECT 1 FROM ensembl_coord_system WHERE version=? LIMIT 1", (ASSEMBLY,)
         ).fetchone()
@@ -1204,7 +1236,7 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
         raise ValueError("Reference metadata must contain a positive Ensembl release number")
     if (
         metadata.get("sequence_chunk_size") != str(CHUNK_SIZE)
-        or metadata.get("sequence_codec", "zlib") != "zlib"
+        or metadata.get("sequence_codec") != "zlib"
     ):
         raise ValueError("Unsupported sequence chunk format")
     if metadata.get("preprocessing_version") not in {None, "1"}:
@@ -1299,21 +1331,22 @@ def restore_interpro_history(
         if not missing:
             break
     if missing:
+        analyses = protein_analyses(db)
         used = {
             row[0]
             for row in sqlite_phase(
                 db,
                 """
-            SELECT DISTINCT i.interpro_ac FROM ensembl_protein_feature pf
+            SELECT DISTINCT i.interpro_ac, pf.analysis_id FROM ensembl_protein_feature pf
             JOIN ensembl_translation tr USING (translation_id)
             JOIN ensembl_transcript t ON t.transcript_id=tr.transcript_id
                                      AND t.canonical_translation_id=tr.translation_id
             JOIN ensembl_interpro i ON i.id=pf.hit_name
-            LEFT JOIN ensembl_analysis a USING (analysis_id)
-            WHERE t.is_current=1 AND LOWER(COALESCE(a.logic_name, '')) != 'sifts'
+            WHERE t.is_current=1
         """,
                 "Check unresolved InterPro metadata",
             )
+            if (analyses.get(row[1], (None, None))[0] or "").lower() not in STRUCTURE_SOURCES
         }
         missing.intersection_update(used)
     if missing:
@@ -1326,6 +1359,70 @@ def restore_interpro_history(
 
 
 # Derived-table preparation: one transaction, one transcript at a time.
+
+
+def _record_transcript_error(
+    summary: dict[str, TranscriptErrorSummary], transcript_id: str, message: str
+) -> None:
+    """Group errors by reason while keeping variable details in the stored payload."""
+    # CDS/peptide mismatch lengths and unsupported assembly names vary, so group
+    # by the fixed message prefix. Each original full error remains retrievable.
+    reason = message.partition(":")[0]
+    entry = summary.setdefault(reason, {"count": 0, "example_transcripts": []})
+    entry["count"] += 1
+    if len(entry["example_transcripts"]) < 3:
+        entry["example_transcripts"].append(transcript_id)
+
+
+def uniprot_lookup_fingerprint(
+    db: sqlite3.Connection, metadata: Mapping[str, str], input_sha256: str
+) -> str | None:
+    """Key verified lookups by XML, mapping code and immutable imported sources.
+
+    Source checksums describe the raw tables and sequences imported by the
+    builder. References without this provenance are reverified, never reused.
+    """
+    if not db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='source_files'"
+    ).fetchone():
+        return None
+    sources = list(db.execute("SELECT url, sha256, bytes FROM source_files ORDER BY url"))
+    if not sources or not all(row[1] for row in sources):
+        return None
+    fingerprint = {
+        "uniprot_sha256": input_sha256,
+        "mapping_sha256": sha256_file(Path(__file__).with_name("uniprot.py")),
+        "ensembl_sources": sources,
+        "reference": {
+            key: metadata.get(key)
+            for key in (
+                "format_version",
+                "release",
+                "species",
+                "assembly",
+                "sequence_codec",
+                "sequence_chunk_size",
+            )
+        },
+    }
+    return hashlib.sha256(json.dumps(fingerprint, sort_keys=True).encode()).hexdigest()
+
+
+def encode_transcript_payload(payload: ProteinFeatureResponse) -> str | bytes:
+    """Compress large models while keeping small error records SQL-readable.
+
+    Level 1 limits preprocessing CPU cost. This is lossless storage compression;
+    it does not remove features or change the annotation API's returned model.
+    """
+    encoded = json.dumps(payload, separators=(",", ":"))
+    return encoded if "error" in payload else zlib.compress(encoded.encode("utf-8"), level=1)
+
+
+def decode_transcript_payload(encoded: str | bytes) -> ProteinFeatureResponse:
+    """Decode compressed models or plain JSON errors and existing references."""
+    if isinstance(encoded, bytes):
+        encoded = zlib.decompress(encoded).decode("utf-8")
+    return cast("ProteinFeatureResponse", json.loads(encoded))
 
 
 def preprocess_reference(
@@ -1361,6 +1458,11 @@ def preprocess_reference(
             "path": str(uniprot_features.resolve()),
             "sha256": sha256_file(uniprot_features),
         }
+    uniprot_fingerprint = (
+        uniprot_lookup_fingerprint(db, metadata, uniprot_source["sha256"])
+        if uniprot_features is not None and uniprot_source is not None
+        else None
+    )
     if panther_classifications is not None and panther_source is None:
         panther_source = {
             "path": str(panther_classifications.resolve()),
@@ -1368,13 +1470,43 @@ def preprocess_reference(
         }
     LOG.info("Preprocessing reference transcript models, domains and splice sites")
     db.commit()
+    # These are reproducible public reference annotations. Some SQLite builds
+    # default to zeroing deleted content, which rewrites entire large tables and
+    # their rollback journals. Reclaim pages without scrubbing; journaling and
+    # atomic rollback remain enabled. Restore the caller's setting on every exit.
+    secure_delete = int(db.execute("PRAGMA main.secure_delete").fetchone()[0])
+    # FAST reads back as 2, but setting the numeric value 2 means ON. Restore
+    # the keyword so a caller using FAST keeps that exact policy.
+    previous_secure_delete = ("OFF", "ON", "FAST")[secure_delete]
+    db.execute("PRAGMA main.secure_delete=OFF")
     # Derived-table replacement, including DDL, is atomic. A failed metadata
     # lookup or model build rolls back to the prior usable reference tables.
-    db.execute("BEGIN IMMEDIATE")
     transcript_progress = None
     try:
+        LOG.info(
+            "SQLite reference preprocessing: secure_delete=%s (previously %s), "
+            "journal_mode=%s, synchronous=%s, auto_vacuum=%s, page_size=%s",
+            db.execute("PRAGMA main.secure_delete").fetchone()[0],
+            previous_secure_delete,
+            db.execute("PRAGMA main.journal_mode").fetchone()[0],
+            db.execute("PRAGMA main.synchronous").fetchone()[0],
+            db.execute("PRAGMA main.auto_vacuum").fetchone()[0],
+            db.execute("PRAGMA main.page_size").fetchone()[0],
+        )
+        db.execute("BEGIN IMMEDIATE")
         if uniprot_features is not None:
-            uniprot_counts = import_features(db, uniprot_features)
+            if (
+                uniprot_fingerprint is not None
+                and uniprot_fingerprint == metadata.get("uniprot_lookup_fingerprint")
+                and metadata.get("uniprot_counts") is not None
+                and db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ff_uniprot_features'"
+                ).fetchone()
+            ):
+                LOG.info("Reusing sequence-verified UniProt lookups: inputs and mapping unchanged")
+                uniprot_counts = json.loads(metadata["uniprot_counts"])
+            else:
+                uniprot_counts = import_features(db, uniprot_features)
         else:
             uniprot_counts = None
         # An offline low-level call can reuse already verified UniProt lookups.
@@ -1414,13 +1546,18 @@ def preprocess_reference(
                 if has_interpro
                 else []
             )
-        with sqlite_activity("Replace previous derived transcript and InterPro tables"):
-            db.execute("DROP TABLE IF EXISTS ff_transcripts")
-            db.execute("DROP TABLE IF EXISTS ff_interpro")
+        for table in ("ff_transcripts", "ff_interpro"):
+            with sqlite_activity("Drop previous " + table):
+                db.execute("DROP TABLE IF EXISTS " + sql_name(table))
+        with sqlite_activity("Create derived transcript and InterPro tables"):
+            # Large model payloads belong in ordinary rowid-table leaves, not
+            # the intermediate nodes of a WITHOUT ROWID primary-key tree.
+            # Internal transcript-ID order then appends model rows sequentially;
+            # only the much smaller stable-ID index needs random inserts.
             db.execute(
-                "CREATE TABLE ff_transcripts (transcript_id TEXT PRIMARY KEY, version INTEGER, "
+                "CREATE TABLE ff_transcripts (transcript_id TEXT NOT NULL PRIMARY KEY, version INTEGER, "
                 "translation_id TEXT, translation_version INTEGER, status TEXT NOT NULL, "
-                "payload TEXT NOT NULL) WITHOUT ROWID"
+                "payload BLOB NOT NULL)"
             )
             db.execute(
                 "CREATE TABLE ff_interpro (interpro_id TEXT PRIMARY KEY, name TEXT, entry_type TEXT) WITHOUT ROWID"
@@ -1492,7 +1629,7 @@ def preprocess_reference(
                 """
             SELECT et.transcript_id, et.rank, e.exon_id, e.seq_region_id,
                    e.seq_region_start AS start, e.seq_region_end AS end,
-                   e.seq_region_strand AS strand
+                   e.seq_region_strand AS strand, e.phase
             FROM ensembl_exon_transcript et JOIN ensembl_exon e USING (exon_id)
             ORDER BY et.transcript_id, et.rank
         """,
@@ -1541,6 +1678,7 @@ def preprocess_reference(
             description="Prepare transcript stream",
         )
         counts = {"ready": 0, "noncoding": 0, "error": 0, "protein_features": 0}
+        errors: dict[str, TranscriptErrorSummary] = {}
         missing_entry_types: set[str] = set()
         total = sqlite_phase(
             db,
@@ -1593,11 +1731,14 @@ def preprocess_reference(
                     cds_length = sum(
                         block["cds_end"] - block["cds_start"] + 1 for block in payload["cds_blocks"]
                     )
-                    # Ensembl CDS lengths may include the terminal stop codon,
-                    # whereas peptide FASTA lengths omit it. Accept either form.
-                    if cds_length not in {protein_length * 3, protein_length * 3 + 3}:
+                    # Include Ensembl's virtual leading codon bases in the length
+                    # comparison, without adding them to genomic CDS blocks.
+                    # Peptide FASTA omits the optional terminal stop codon.
+                    start_phase = payload.get("cds_start_phase", 0)
+                    if cds_length + start_phase not in {protein_length * 3, protein_length * 3 + 3}:
                         raise ValueError(
-                            f"CDS/peptide length mismatch: {cds_length} bp, {payload['protein_length']} aa; possible sequence edits"
+                            f"CDS/peptide length mismatch: {cds_length} bp, {protein_length} aa, "
+                            f"start phase {start_phase}"
                         )
                     block_ends = [block["cds_end"] for block in payload["cds_blocks"]]
                     # Multiple signatures/InterPro mappings can share an interval.
@@ -1605,11 +1746,17 @@ def preprocess_reference(
                     segment_cache: dict[tuple[int, int], tuple[list[GenomicSegment], int, int]] = {}
                     for feature in feature_rows:
                         source = analyses.get(feature["analysis_id"], (feature["source"], None))[0]
-                        if (source or "").lower() == "sifts":
-                            # Structure mappings are outside our functional feature list.
+                        if (source or "").lower() in STRUCTURE_SOURCES:
+                            # Whole-protein structure mappings are not domains/sites.
+                            # Exclude them before validating functional coordinates:
+                            # their intervals may exceed this transcript's peptide.
                             continue
                         if not 1 <= feature["start"] <= feature["end"] <= protein_length:
-                            raise ValueError("Protein feature falls outside peptide")
+                            raise ValueError(
+                                f"Protein feature falls outside peptide: {source} "
+                                f"{feature['feature_id']} {feature['start']}-{feature['end']}, "
+                                f"peptide length {protein_length}"
+                            )
                         interval = feature["start"], feature["end"]
                         mapped = segment_cache.get(interval)
                         if mapped is None:
@@ -1695,14 +1842,12 @@ def preprocess_reference(
                                 "panther_subfamily_description": None,
                             }
                         )
-                    payload["feature_groups"] = reference_feature_groups(
-                        payload["protein_features"]
-                    )
                     counts["protein_features"] += len(payload["protein_features"])
             except ValueError as exc:
                 # Preserve the reason for unsupported models so readers can explain
                 # the failure, rather than reporting that the transcript is absent.
                 status, payload = "error", {"error": f"{transcript['transcript_id']}: {exc}"}
+                _record_transcript_error(errors, transcript["transcript_id"], str(exc))
             if status == "ready":
                 payload = cast("TranscriptProteinFeatureResult", payload)
                 missing_entry_types.update(
@@ -1719,7 +1864,7 @@ def preprocess_reference(
                     transcript["translation_id"],
                     transcript["translation_version"],
                     status,
-                    json.dumps(payload, separators=(",", ":")),
+                    encode_transcript_payload(payload),
                 ),
             )
             if number % 1000 == 0:
@@ -1737,10 +1882,14 @@ def preprocess_reference(
             db.execute("CREATE INDEX ff_transcript_translation ON ff_transcripts (translation_id)")
             db.execute("CREATE INDEX ff_transcript_status ON ff_transcripts (status)")
         # Keep provenance in the same transaction as the tables it describes.
+        errors = dict(sorted(errors.items(), key=lambda item: (-item[1]["count"], item[0])))
         preprocessing_metadata = {
             "preprocessing_version": "1",
-            "feature_annotation_version": "2",
+            "feature_annotation_version": "3",
+            "cds_mapping_version": "2",
+            "transcript_payload_codec": TRANSCRIPT_PAYLOAD_CODEC,
             "preprocessing_counts": json.dumps(counts),
+            "preprocessing_errors": json.dumps(errors),
             "preprocessed_utc": datetime.now(timezone.utc).isoformat(),
             "interpro_entries_sha256": (
                 sha256_file(interpro_entries)
@@ -1763,6 +1912,9 @@ def preprocess_reference(
                 uniprot_source, sort_keys=True
             )
             preprocessing_metadata["uniprot_counts"] = json.dumps(uniprot_counts, sort_keys=True)
+            # An import without recorded source provenance invalidates any
+            # prior reuse key. Empty values never permit reuse.
+            preprocessing_metadata["uniprot_lookup_fingerprint"] = uniprot_fingerprint or ""
         if panther_source is not None:
             preprocessing_metadata["panther_classifications_source"] = json.dumps(
                 panther_source, sort_keys=True
@@ -1783,14 +1935,24 @@ def preprocess_reference(
             db.rollback()
         raise
     finally:
-        if transcript_progress is not None:
-            transcript_progress.close()
+        try:
+            if transcript_progress is not None:
+                transcript_progress.close()
+        finally:
+            db.execute(f"PRAGMA main.secure_delete={previous_secure_delete}")
     LOG.info("Preprocessing complete: %s", counts)
     if counts["error"]:
         LOG.warning(
             "%s transcripts have stored errors; inspect ff_transcripts WHERE status='error'",
             counts["error"],
         )
+        for reason, summary in errors.items():
+            LOG.warning(
+                "  %s: %s transcript(s); examples: %s",
+                reason,
+                f"{summary['count']:,}",
+                ", ".join(summary["example_transcripts"]),
+            )
     return counts
 
 
@@ -1800,8 +1962,8 @@ def preprocess_reference(
 class ReferenceReader:
     """Read-only local reference access; reuse one reader across fusion calls.
 
-    get_transcript() is compatible with the existing Ensembl transcript-result
-    dictionary, including splice sites and feature groups used by annotation.
+    get_transcript() returns prepared coordinates, splice sites and features,
+    reconstructing pre-mRNA from the genome when requested.
     Genome chunk caching is LRU and bounded (default at most 64 MiB); no
     transcript sequences are cached.
     The reader is intended for one thread; use a separate reader per worker.
@@ -1821,10 +1983,31 @@ class ReferenceReader:
                 raise ValueError("Database is not preprocessed; run --preprocess-only DB")
             if metadata.get("sequence_chunk_size") != str(CHUNK_SIZE):
                 raise ValueError("Unsupported sequence chunk size")
+            if metadata.get("transcript_payload_codec") not in {None, TRANSCRIPT_PAYLOAD_CODEC}:
+                raise ValueError("Unsupported transcript payload codec")
             self.metadata = metadata
         except BaseException:
             self.db.close()
             raise
+
+    def transcript_error_summary(self) -> dict[str, TranscriptErrorSummary]:
+        """Read grouped failures with example IDs without rebuilding the reference.
+
+        Prepared summaries are cheap metadata reads. If one is absent, inspect
+        only stored error payloads; usable transcript payloads are never loaded.
+        """
+        if "preprocessing_errors" in self.metadata:
+            return cast(
+                dict[str, TranscriptErrorSummary], json.loads(self.metadata["preprocessing_errors"])
+            )
+        errors: dict[str, TranscriptErrorSummary] = {}
+        for transcript_id, encoded in self.db.execute(
+            "SELECT transcript_id, payload FROM ff_transcripts WHERE status='error' ORDER BY transcript_id"
+        ):
+            payload = cast("EnsemblError", decode_transcript_payload(encoded))
+            message = payload["error"].removeprefix(transcript_id + ": ")
+            _record_transcript_error(errors, transcript_id, message)
+        return dict(sorted(errors.items(), key=lambda item: (-item[1]["count"], item[0])))
 
     def get_transcript(
         self, transcript_id: str, *, include_sequence: bool = True
@@ -1847,13 +2030,14 @@ class ReferenceReader:
             }
         if status == "noncoding":
             return {"error": "Transcript is non-coding or has no translation object"}
-        payload = json.loads(encoded)
+        payload = decode_transcript_payload(encoded)
         if status == "error":
             return payload
+        payload = cast("TranscriptProteinFeatureResult", payload)
         if include_sequence:
             payload["premrna_sequence"] = self.sequence(
                 "dna",
-                payload["chromosome"],
+                cast(str, payload["chromosome"]),
                 payload["transcript_genomic_start"],
                 payload["transcript_genomic_end"],
                 payload["strand"],
@@ -1893,7 +2077,12 @@ class ReferenceReader:
         """Use this reader as a context manager."""
         return self
 
-    def __exit__(self, *_: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Close the reader even when annotation raises an exception."""
         self.close()
 

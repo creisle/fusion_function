@@ -82,7 +82,7 @@ def test_local_interpro_reprocessing_preserves_metadata_and_provenance(tmp_path)
         metadata = dict(db.execute("SELECT * FROM build_metadata"))
         assert metadata["interpro_entries_sha256"] == digest
         assert metadata["interpro_entry_types_loaded"] == "true"
-        payload = json.loads(
+        payload = data.decode_transcript_payload(
             db.execute(
                 "SELECT payload FROM ff_transcripts WHERE status='ready' LIMIT 1"
             ).fetchone()[0]
@@ -110,6 +110,9 @@ def test_missing_interpro_blocks_preparation_and_rolls_back(tmp_path):
     [
         ("species", "mus_musculus"),
         ("assembly", "GRCh37"),
+        ("assembly", None),
+        ("sequence_codec", "gzip"),
+        ("sequence_codec", None),
         ("format_version", "2"),
         ("release", ""),
         ("preprocessing_version", "2"),
@@ -119,10 +122,15 @@ def test_missing_interpro_blocks_preparation_and_rolls_back(tmp_path):
 def test_invalid_source_rejected_before_interpro_download(tmp_path, monkeypatch, key, value):
     path = tmp_path / "reference.sqlite"
     db = fixture(path)
-    db.execute("INSERT OR REPLACE INTO build_metadata VALUES (?,?)", (key, value))
+    if value is None:
+        db.execute("DELETE FROM build_metadata WHERE key=?", (key,))
+    else:
+        db.execute("INSERT OR REPLACE INTO build_metadata VALUES (?,?)", (key, value))
     db.commit()
     db.close()
-    monkeypatch.setattr(data, "download", lambda *_: pytest.fail("Downloaded for invalid database"))
+    monkeypatch.setattr(
+        data, "download", lambda url, directory: pytest.fail("Downloaded for invalid database")
+    )
     assert data.main(["--preprocess-only", str(path)]) == 1
 
 
@@ -130,7 +138,7 @@ def test_interrupted_download_logs_path_and_cleans_partial(tmp_path, monkeypatch
     class Interrupted(io.BytesIO):
         headers = {}
 
-        def read(self, *_):
+        def read(self, size=-1):
             raise KeyboardInterrupt
 
     monkeypatch.setattr(data, "open_url", lambda _: Interrupted())
@@ -229,15 +237,15 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     original_import = data.import_fasta
     original_validate = data.validate_dna_regions
 
-    def record_import(db, kind, source, **kwargs):
+    def record_import(db, kind, path, *, resume=False):
         imported.append(kind)
-        return original_import(db, kind, source, **kwargs)
+        return original_import(db, kind, path, resume=resume)
 
     monkeypatch.setattr(data, "import_fasta", record_import)
     monkeypatch.setattr(
         data,
         "validate_dna_regions",
-        lambda *_: (_ for _ in ()).throw(ValueError("DNA validation failed")),
+        lambda db: (_ for _ in ()).throw(ValueError("DNA validation failed")),
     )
     assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 1
     assert imported == ["dna"]  # Fail before spending time importing peptide FASTA.
@@ -247,7 +255,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     monkeypatch.setattr(
         data,
         "preprocess_reference",
-        lambda *_, **__: (_ for _ in ()).throw(ValueError("injected failure")),
+        lambda db, interpro_entries=None, *, interpro_archive_cache=None, panther_classifications=None, panther_cache=None, uniprot_features=None, uniprot_source=None: (
+            (_ for _ in ()).throw(ValueError("injected failure"))
+        ),
     )
     assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 1
     assert path.read_bytes() == previous
@@ -258,10 +268,14 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     # FASTA files survive, so none should be imported again.
     monkeypatch.setattr(data, "preprocess_reference", original_preprocess)
     monkeypatch.setattr(
-        data, "import_table", lambda *_: pytest.fail("Reimported a completed table")
+        data,
+        "import_table",
+        lambda db, table, columns, path: pytest.fail("Reimported a completed table"),
     )
     monkeypatch.setattr(
-        data, "import_fasta", lambda *_, **__: pytest.fail("Reimported completed FASTA")
+        data,
+        "import_fasta",
+        lambda db, kind, path, *, resume=False: pytest.fail("Reimported completed FASTA"),
     )
     assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 0
     assert not checkpoint.exists()
@@ -292,13 +306,19 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     monkeypatch.setattr(
         data,
         "preprocess_reference",
-        lambda *_, **__: pytest.fail("Repeated completed preprocessing"),
+        lambda db, interpro_entries=None, *, interpro_archive_cache=None, panther_classifications=None, panther_cache=None, uniprot_features=None, uniprot_source=None: (
+            pytest.fail("Repeated completed preprocessing")
+        ),
     )
     monkeypatch.setattr(
-        data, "import_table", lambda *_: pytest.fail("Reimported a completed table")
+        data,
+        "import_table",
+        lambda db, table, columns, path: pytest.fail("Reimported a completed table"),
     )
     monkeypatch.setattr(
-        data, "import_fasta", lambda *_, **__: pytest.fail("Reimported completed FASTA")
+        data,
+        "import_fasta",
+        lambda db, kind, path, *, resume=False: pytest.fail("Reimported completed FASTA"),
     )
     assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 0
     assert not checkpoint.exists()

@@ -1,4 +1,4 @@
-"""FTP analysis labels and bulk subfamilies must preserve functional fallbacks."""
+"""FTP analysis labels and bulk subfamilies must preserve feature types and boundaries."""
 
 import json
 import urllib.error
@@ -62,10 +62,10 @@ def fusion(path):
     )
 
 
-def test_bulk_subfamily_restores_missing_domain_without_changing_coordinates(tmp_path):
+def test_bulk_subfamily_enriches_family_name_without_changing_coordinates(tmp_path):
     path, db, entries, classifications = panther_reference(tmp_path)
     data.preprocess_reference(db, entries)
-    before = json.loads(
+    before = data.decode_transcript_payload(
         db.execute(
             "SELECT payload FROM ff_transcripts WHERE transcript_id='ENST00000000001'"
         ).fetchone()[0]
@@ -73,7 +73,7 @@ def test_bulk_subfamily_restores_missing_domain_without_changing_coordinates(tmp
     assert before["protein_features"][0]["source"] == "PANTHER"
     assert all(feature["domain_type"] == "family" for feature in fusion(path)["domains"])
     data.preprocess_reference(db, entries, panther_classifications=classifications)
-    after = json.loads(
+    after = data.decode_transcript_payload(
         db.execute(
             "SELECT payload FROM ff_transcripts WHERE transcript_id='ENST00000000001'"
         ).fetchone()[0]
@@ -86,7 +86,7 @@ def test_bulk_subfamily_restores_missing_domain_without_changing_coordinates(tmp
     feature = after["protein_features"][0]
     assert feature["panther_subfamily_id"] == "PTHR48228:SF5"
     assert feature["panther_subfamily_description"] == "ALPHA-METHYLACYL-COA RACEMASE"
-    other = json.loads(
+    other = data.decode_transcript_payload(
         db.execute(
             "SELECT payload FROM ff_transcripts WHERE transcript_id='ENST00000000002'"
         ).fetchone()[0]
@@ -247,7 +247,9 @@ def test_saved_bulk_metadata_is_reusable_offline(tmp_path, monkeypatch):
     data.preprocess_reference(db, entries, panther_classifications=classifications)
     before = list(db.execute("SELECT * FROM ff_transcripts"))
     monkeypatch.setattr(
-        data, "download", lambda *_: pytest.fail("Offline preprocessing downloaded data")
+        data,
+        "download",
+        lambda url, directory: pytest.fail("Offline preprocessing downloaded data"),
     )
     data.preprocess_reference(db, entries)
     assert list(db.execute("SELECT * FROM ff_transcripts")) == before
