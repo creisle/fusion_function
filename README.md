@@ -66,10 +66,15 @@ Analysis uses the newest prepared local release by default.
 - [Methodology](docs/methodology.md)
 - [Testing](docs/testing.md)
 
+## Important Limitations
+
+- This package uses the splicing model defined by [MAVIS](https://github.com/bcgsc/mavis), this is non-exhaustive. It assumes splice sites to be disrupted based on a breakpoint being within 2bp but there are many other ways to disrupt splicing that are difficult to predict computationally (ex. deep intronic). This package only covers the standard scenarios
+- Currently we only support Hg38
+- Only exact breakpoints are supported
+- Predicted structural consequences do not establish fusion expression, oncogenicity, pathogenicity, or clinical actionability.
+
 ## Citation
 
 This package ports and extends selected fusion-annotation logic from [MAVIS](https://github.com/bcgsc/mavis). Please cite:
 
 Reisle C, Mungall KL, Choo C, et al. MAVIS: merging, annotation, validation, and illustration of structural variants. *Bioinformatics*. 2019;35(3):515–517. PMID:30016509.
-
-Predicted structural consequences do not establish fusion expression, oncogenicity, pathogenicity, or clinical actionability.
