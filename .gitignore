@@ -13,3 +13,4 @@ benchmark-*json
 run_db_update.sh
 /*.zip
 nohup.out
+mkdoc_data.ipynb

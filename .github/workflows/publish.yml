@@ -1,0 +1,89 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: Build and test distributions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install build and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --group dev build twine
+
+      - name: Check release tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          tag = os.environ["RELEASE_TAG"]
+          if tag.removeprefix("v") != version:
+              raise SystemExit(f"Release tag {tag!r} does not match package version {version!r}")
+          PY
+
+      - name: Build wheel and source distribution
+        run: python -m build
+
+      - name: Validate distribution metadata
+        run: python -m twine check --strict dist/*
+
+      - name: Install the built wheel
+        run: python -m pip install dist/*.whl
+
+      - name: Run tests against the built wheel
+        # Full-reference tests skip when no local human database is installed.
+        run: python -m pytest
+
+      - name: Save tested distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish tested distributions
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/fusion-function/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download tested distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: python-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

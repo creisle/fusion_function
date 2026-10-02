@@ -2,6 +2,7 @@
 name = "fusion-function"
 version = "0.2.1"
 description = "Fusion frame and protein-domain prediction using a local Ensembl reference"
+readme = "README.md"
 authors = [
     {name = "Caralyn Reisle",email = "creisle@bcgsc.ca"}
 ]
