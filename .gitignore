@@ -8,3 +8,6 @@ __pycache__
 .ruff_cache
 fusion_function.tar.gz
 fusion_function_*.tar.gz
+benchmark-*json
+*.log
+run_db_update.sh

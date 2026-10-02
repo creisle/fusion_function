@@ -2,9 +2,9 @@
 """Benchmark an existing fusion-function reference without altering it.
 
 Examples (run in the package's Python environment):
-    python benchmark_fusion_function.py --release 116 --output benchmark-116.json
-    python benchmark_fusion_function.py --database /path/ensembl.sqlite
-    python benchmark_fusion_function.py --cases sv_cases.json --sample 100 --repeat 3
+    python scripts/benchmark_fusion_function.py --release 116 --output benchmark-116.json
+    python scripts/benchmark_fusion_function.py --database /path/ensembl.sqlite
+    python scripts/benchmark_fusion_function.py --cases sv_cases.json --sample 100 --repeat 3
 
 --cases accepts a JSON list of annotate_fusion_domains inputs, with optional
 "name" fields. Reference/database/release arguments belong on this script's CLI.
@@ -161,7 +161,7 @@ def benchmark_fusions(
     for phase in phases:
         with tqdm(cases, desc=f"[3/5] Fusion {phase}", unit="SV") as bar:
             for number, case in enumerate(bar):
-                bar.set_postfix_str(case["name"], refresh=True)
+                bar.set_postfix_str(case["name"], refresh=False)
                 result, row = measure(
                     rows, "fusion", phase, case["name"], lambda: annotate(reference, case)
                 )
@@ -198,7 +198,9 @@ def benchmark_transcripts(
     for phase in phases:
         with tqdm(ids, desc=f"[4/5] Transcripts {phase}", unit="transcript") as bar:
             for transcript_id in bar:
-                bar.set_postfix_str(f"{transcript_id}: SQL", refresh=True)
+                # Let tqdm throttle rendering. Forced redraws can dominate a
+                # short repeat pass over a remote terminal and are not API work.
+                bar.set_postfix_str(f"{transcript_id}: SQL", refresh=False)
                 stored, sql_row = measure(
                     rows,
                     "transcript_sql",
@@ -214,7 +216,7 @@ def benchmark_transcripts(
                 sql_row["payload_bytes"] = len(
                     stored[0].encode() if isinstance(stored[0], str) else stored[0]
                 )
-                bar.set_postfix_str(f"{transcript_id}: JSON", refresh=True)
+                bar.set_postfix_str(f"{transcript_id}: JSON", refresh=False)
                 payload, parse_row = measure(
                     rows,
                     "transcript_json",
@@ -227,7 +229,7 @@ def benchmark_transcripts(
                 if "error" in payload:
                     parse_row["error"] = payload["error"]
                     continue
-                bar.set_postfix_str(f"{transcript_id}: sequence", refresh=True)
+                bar.set_postfix_str(f"{transcript_id}: sequence", refresh=False)
                 sequence, sequence_row = measure(
                     rows,
                     "transcript_sequence",
@@ -361,7 +363,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                 setting: reference.db.execute(f"PRAGMA {setting}").fetchone()[0]
                 for setting in ("page_size", "cache_size", "journal_mode", "mmap_size")
             }
+            transcript_schema = reference.db.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='ff_transcripts'"
+            ).fetchone()[0]
+            report["transcript_storage"] = {
+                "payload_codec": reference.metadata.get("transcript_payload_codec", "json"),
+                "table_layout": (
+                    "without_rowid" if "WITHOUT ROWID" in transcript_schema.upper() else "rowid"
+                ),
+            }
             print(f"Database: {reference.path} (release {report['release']})", flush=True)
+            print(
+                "Transcript storage: "
+                f"{report['transcript_storage']['payload_codec']}, "
+                f"{report['transcript_storage']['table_layout']}",
+                flush=True,
+            )
             print(
                 "First pass is NOT guaranteed cold: OS/storage caches are left intact.", flush=True
             )

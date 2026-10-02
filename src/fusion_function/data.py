@@ -12,9 +12,7 @@ Set FUSION_FUNCTION_CACHEDIR or --cache-dir to change the cache root.
 Storage: ensembl_* tables preserve the FTP dump columns. DNA and peptides use
 independently compressed 1 MiB chunks. ff_transcripts stores prepared exon/CDS
 coordinates, splice windows and protein features; ff_interpro stores names and
-types. Transcript models use compressed JSON; error messages remain plain JSON.
-ff_uniprot_features stores sequence-verified reviewed human sites,
-domains and motifs. Coordinates are 1-based and inclusive; CDS blocks follow transcript
+types. Coordinates are 1-based and inclusive; CDS blocks follow transcript
 orientation, including on the negative strand. Pre-mRNA is reconstructed when
 requested, rather than stored for every transcript.
 
@@ -25,9 +23,6 @@ Archive checksums and source releases are recorded in build_metadata.
 Human PANTHER subfamily classifications are fetched for the version recorded
 by Ensembl, or supplied with --panther-classifications FILE. Protein cross-
 references enrich existing family hits; no domain coordinates are invented.
-Reviewed human UniProt XML is fetched during preparation only, or supplied with
---uniprot-features FILE. Features require exact protein sequence identity and
-carry UniProt accessions, isoforms and evidence codes.
 
 New databases resume from <output>.building and are published only after
 integrity checking; --force permits replacement. Repeating the same build skips
@@ -59,60 +54,15 @@ import urllib.request
 import zlib
 from bisect import bisect_left
 from collections import OrderedDict
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
+from contextlib import ExitStack, closing, contextmanager
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from html.parser import HTMLParser
 from itertools import groupby
 from pathlib import Path
-from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Self, TextIO, TypedDict, cast, overload
-from xml.etree.ElementTree import ParseError
 
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-
-if TYPE_CHECKING:
-    from http.client import HTTPResponse
-
-    from .ensembl import (
-        CDSBlock,
-        EnsemblError,
-        GenomicSegment,
-        ProteinFeatureAnnotation,
-        ProteinFeatureResponse,
-        TranscriptProteinFeatureResult,
-    )
-
-
-# Raw SQL rows have different columns per source table; derived structures use
-# the same typed records as the annotation API.
-DatabaseRow = dict[str, Any]
-AnalysisMetadata = dict[int, tuple[str | None, str | None]]
-InterProMetadata = dict[str, tuple[str | None, str | None]]
-ChunkCache = OrderedDict[tuple[str, str, int], bytes]
-STRUCTURE_SOURCES = frozenset({"sifts", "alphafold"})
-TRANSCRIPT_PAYLOAD_CODEC = "zlib-json-v1"
-
-
-class SourceRecord(TypedDict):
-    url: str
-    sha256: str
-    bytes: int
-
-
-class TranscriptErrorSummary(TypedDict):
-    count: int
-    example_transcripts: list[str]
-
-
-class CheckpointRecord(TypedDict):
-    source: dict[str, Any]
-    fingerprint: str
-    count: int
-    complete: bool
-
 
 BASE_URL = "https://ftp.ensembl.org/pub/"
 INTERPRO_ENTRIES_URL = "https://ftp.ebi.ac.uk/pub/databases/interpro/current_release/entry.list"
@@ -163,14 +113,14 @@ SQLITE_LOG_SECONDS = 30.0
 class BuildSteps:
     """Label the fixed build stages; their durations differ, so no total ETA."""
 
-    def __init__(self, total: int) -> None:
+    def __init__(self, total: int):
         """Track the expected stage count and total elapsed build time."""
         self.total = total
         self.current = 0
         self.started = time.monotonic()
 
     @contextmanager
-    def step(self, description: str) -> Iterator[None]:
+    def step(self, description: str):
         """Label a stage and its nested bars; restore the label even on failure."""
         self.current += 1
         if self.current > self.total:
@@ -182,7 +132,7 @@ class BuildSteps:
         finally:
             STEP_PREFIX.reset(token)
 
-    def complete(self) -> None:
+    def complete(self):
         """Check that every declared stage ran, then log the total duration."""
         if self.current != self.total:
             raise ValueError("Preparation completed fewer steps than expected")
@@ -193,40 +143,18 @@ class BuildSteps:
         )
 
 
-def progress(
-    iterable: Iterable[Any] | None = None,
-    *,
-    total: int | None = None,
-    desc: str = "",
-    unit: str = "it",
-    unit_scale: bool = False,
-    unit_divisor: int = 1000,
-    disable: bool | None = None,
-    file: TextIO | None = None,
-    bar_format: str | None = None,
-) -> tqdm:
+def progress(*args, **kwargs):
     """Use compact, rate-limited bars; suppress terminal redraws in log files."""
-    return tqdm(
-        iterable,
-        total=total,
-        desc=STEP_PREFIX.get() + desc,
-        unit=unit,
-        unit_scale=unit_scale,
-        unit_divisor=unit_divisor,
-        disable=disable,
-        file=file,
-        bar_format=bar_format,
-        dynamic_ncols=True,
-        mininterval=0.5,
-    )
+    for key, value in {"dynamic_ncols": True, "mininterval": 0.5, "disable": None}.items():
+        kwargs.setdefault(key, value)
+    kwargs["desc"] = STEP_PREFIX.get() + kwargs.get("desc", "")
+    return tqdm(*args, **kwargs)
 
 
 def file_label(path: Path) -> str:
     """Short labels keep progress output on one terminal line."""
     if path.name.endswith(".sql.gz"):
         return "core schema"
-    if path.name == "stream":
-        return "UniProt features"
     if path.name == "entry.list":
         return "InterPro"
     for kind in SEQUENCE_TYPES:
@@ -235,30 +163,8 @@ def file_label(path: Path) -> str:
     return path.name.removesuffix(".txt.gz")[:24]
 
 
-@overload
-def input_progress(
-    path: Path, description: str, *, compressed: bool = True, text: Literal[True]
-) -> AbstractContextManager[tuple[io.TextIOWrapper, tqdm, Callable[[], None]]]: ...
-
-
-@overload
-def input_progress(
-    path: Path, description: str, *, compressed: bool = True, text: Literal[False] = False
-) -> AbstractContextManager[tuple[gzip.GzipFile | io.BufferedReader, tqdm, Callable[[], None]]]: ...
-
-
-@overload
-def input_progress(
-    path: Path, description: str, *, compressed: bool = True, text: bool
-) -> AbstractContextManager[
-    tuple[io.TextIOWrapper | gzip.GzipFile | io.BufferedReader, tqdm, Callable[[], None]]
-]: ...
-
-
 @contextmanager
-def input_progress(
-    path: Path, description: str, *, compressed: bool = True, text: bool = False
-) -> Iterator[tuple[Any, tqdm, Callable[[], None]]]:
+def input_progress(path: Path, description: str, *, compressed=True, text=False):
     """Track source bytes during parsing, with no pre-count or gzip size guess."""
     with ExitStack() as stack:
         raw = stack.enter_context(path.open("rb"))
@@ -279,7 +185,7 @@ def input_progress(
         )
         position = 0
 
-        def update() -> None:
+        def update():
             """Advance by source bytes read, including gzip buffering."""
             nonlocal position
             consumed = raw.tell()
@@ -291,7 +197,7 @@ def input_progress(
 
 
 @contextmanager
-def sqlite_activity(description: str) -> Iterator[None]:
+def sqlite_activity(description: str):
     """Report elapsed time even when SQLite does not invoke progress callbacks.
 
     The timer thread only refreshes output; all database work stays on the
@@ -304,7 +210,7 @@ def sqlite_activity(description: str) -> Iterator[None]:
     stopped = threading.Event()
     with progress(desc=description, bar_format="{desc}: {elapsed} elapsed{postfix}") as bar:
 
-        def update() -> None:
+        def update():
             """Refresh the timer independently of SQLite instruction counts."""
             last_log = started
             while not stopped.wait(SQLITE_REFRESH_SECONDS):
@@ -340,11 +246,11 @@ def sqlite_activity(description: str) -> Iterator[None]:
             )
 
 
-def sqlite_phase(db: sqlite3.Connection, sql: str, description: str) -> list[tuple[Any, ...]]:
+def sqlite_phase(db: sqlite3.Connection, sql: str, description: str):
     """Run one SQLite statement with an independent elapsed-time display."""
     with sqlite_activity(description):
 
-        def checkpoint() -> int:
+        def checkpoint():
             """Keep Python signal handling responsive without driving the timer."""
             return 0
 
@@ -371,7 +277,7 @@ def default_cache_dir() -> Path:
 # Source discovery, verified downloads and MySQL dump imports.
 
 
-def open_url(url: str) -> HTTPResponse:
+def open_url(url: str):
     """Open a source URL with an identifying user agent and a bounded timeout."""
     request = urllib.request.Request(url, headers={"User-Agent": "ensembl-to-sqlite/1"})
     return urllib.request.urlopen(request, timeout=60)
@@ -380,12 +286,12 @@ def open_url(url: str) -> HTTPResponse:
 class Links(HTMLParser):
     """Collect filenames from the HTML directory listings used by FTP mirrors."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Start with no names; repeated links are collapsed into a set."""
         super().__init__()
         self.names: set[str] = set()
 
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+    def handle_starttag(self, tag, attrs):
         """Keep link basenames, excluding navigation to the current/parent path."""
         if tag == "a":
             href = dict(attrs).get("href", "")
@@ -404,7 +310,7 @@ def listing(url: str) -> set[str]:
     return parser.names
 
 
-def resolve_core(base: str, release: int | None) -> tuple[int, str, str]:
+def resolve_core(base: str, release: int | None):
     """Find a published release and its human GRCh38 core directory.
 
     Latest means the largest numbered release, not an unversioned FTP alias.
@@ -424,7 +330,7 @@ def resolve_core(base: str, release: int | None) -> tuple[int, str, str]:
     return release, root, core_name
 
 
-def sha256_file(path: Path, *, show_progress: bool = False) -> str:
+def sha256_file(path: Path, *, show_progress=False) -> str:
     """Hash a file in bounded reads, optionally displaying verification progress."""
     digest = hashlib.sha256()
     with (
@@ -456,10 +362,10 @@ def download(url: str, directory: Path) -> tuple[Path, str]:
     path = directory / name
     sidecar = path.with_name(path.name + ".sha256")
     if path.is_file() and sidecar.is_file():
-        cached_digest = sha256_file(path, show_progress=True)
-        if cached_digest == sidecar.read_text().strip():
+        digest = sha256_file(path, show_progress=True)
+        if digest == sidecar.read_text().strip():
             LOG.info("Using cached %s", path)
-            return path, cached_digest
+            return path, digest
         LOG.warning("Cached checksum mismatch: downloading %s again", name)
     LOG.info("Downloading %s", url)
     LOG.info("  Cached file: %s; checksum: %s", path, sidecar)
@@ -517,10 +423,10 @@ def parse_schema(path: Path) -> dict[str, list[tuple[str, str]]]:
         text = stream.read()
     tables = {}
     for match in re.finditer(
-        r"CREATE TABLE(?: IF NOT EXISTS)? `([^`]+)`\s*\((.*?)\n\)", text, re.S
+        r"CREATE TABLE(?: IF NOT EXISTS)? `([^`]+)`\s*\((.*?)\n\)", text, re.DOTALL
     ):
         columns = []
-        for column in re.finditer(r"^\s*`([^`]+)`\s+([A-Za-z]+)", match[2], re.M):
+        for column in re.finditer(r"^\s*`([^`]+)`\s+([A-Za-z]+)", match[2], re.MULTILINE):
             mysql_type = column[2].lower()
             # Ignore MySQL constraints/options; imports need only SQLite affinities.
             if mysql_type in {"tinyint", "smallint", "mediumint", "int", "bigint"}:
@@ -547,9 +453,7 @@ def mysql_value(value: str) -> str | None:
     return re.sub(r"\\(.)", lambda m: MYSQL_ESCAPES.get(m[1], m[1]), value)
 
 
-def import_table(
-    db: sqlite3.Connection, table: str, columns: Sequence[tuple[str, str]], path: Path
-) -> int:
+def import_table(db: sqlite3.Connection, table: str, columns, path: Path) -> int:
     """Import one gzipped tab-separated dump, add lookup indexes and commit."""
     destination = "ensembl_" + table
     definitions = ", ".join(f"{sql_name(name)} {kind}" for name, kind in columns)
@@ -612,7 +516,7 @@ def import_table(
 # Chunked sequence storage and inclusive interval reads.
 
 
-def create_sequence_tables(db: sqlite3.Connection) -> None:
+def create_sequence_tables(db: sqlite3.Connection):
     """Create sequence metadata and separately addressable compressed chunks."""
     db.executescript("""
         CREATE TABLE sequences (
@@ -629,7 +533,7 @@ def create_sequence_tables(db: sqlite3.Connection) -> None:
     """)
 
 
-def validate_dna_regions(db: sqlite3.Connection) -> None:
+def validate_dna_regions(db: sqlite3.Connection):
     """Names are unique within coordinate systems, not across genome assemblies."""
     db.execute("CREATE INDEX IF NOT EXISTS ensembl_seq_region_name ON ensembl_seq_region (name)")
     unmatched = db.execute(
@@ -654,7 +558,7 @@ def validate_dna_regions(db: sqlite3.Connection) -> None:
     LOG.info("Validated DNA sequence-region lengths against %s core records", ASSEMBLY)
 
 
-def import_fasta(db: sqlite3.Connection, kind: str, path: Path, *, resume: bool = False) -> int:
+def import_fasta(db: sqlite3.Connection, kind: str, path: Path, *, resume=False) -> int:
     """Stream FASTA, optionally reusing committed records from the same input.
 
     The builder checks the source checksum before enabling resume. Record rows
@@ -684,7 +588,7 @@ def import_fasta(db: sqlite3.Connection, kind: str, path: Path, *, resume: bool 
     offset = count = 0
     digest = hashlib.sha256()
 
-    def flush(size: int) -> None:
+    def flush(size: int):
         """Store the next chunk; its database start is 1-based, not a byte offset."""
         nonlocal offset
         chunk = bytes(buffer[:size])
@@ -697,7 +601,7 @@ def import_fasta(db: sqlite3.Connection, kind: str, path: Path, *, resume: bool 
         if size == CHUNK_SIZE:
             update()
 
-    def finish() -> None:
+    def finish():
         """Flush one FASTA record and record its full length, header and checksum."""
         nonlocal count
         if sequence_id is None:
@@ -763,7 +667,7 @@ def fetch_sequence(
     end: int | None = None,
     strand: int = 1,
     *,
-    _chunk_cache: ChunkCache | None = None,
+    _chunk_cache=None,
     _cache_limit: int = 64,
 ) -> str:
     """Read a 1-based inclusive interval, optionally using a bounded chunk cache.
@@ -819,12 +723,10 @@ def fetch_sequence(
     return result
 
 
-# Streaming transcript models and coordinate mapping.
+# Streaming transcript models, coordinate mapping and feature groups.
 
 
-def dict_rows(
-    db: sqlite3.Connection, query: str, *, description: str | None = None
-) -> Iterator[DatabaseRow]:
+def dict_rows(db, query, *, description=None):
     """Yield named rows from a query without changing the connection row factory."""
     # Sorted queries can do substantial work before returning their first row.
     if description is not None:
@@ -844,12 +746,12 @@ class GroupStream:
     This lets exon/feature queries advance alongside the main transcript query.
     """
 
-    def __init__(self, rows: Iterable[DatabaseRow]) -> None:
+    def __init__(self, rows):
         """Prime the first group from an already ordered row iterator."""
         self.groups = iter(groupby(rows, key=lambda row: row["transcript_id"]))
         self.current = next(self.groups, None)
 
-    def take(self, transcript_id: int) -> list[DatabaseRow]:
+    def take(self, transcript_id):
         """Return this transcript's rows, or an empty list when it has no group."""
         while self.current is not None and self.current[0] < transcript_id:
             self.current = next(self.groups, None)
@@ -860,18 +762,12 @@ class GroupStream:
         return rows
 
 
-def reference_structure(
-    transcript: Mapping[str, Any],
-    exons: Sequence[DatabaseRow],
-    translation: Mapping[str, Any] | None,
-) -> TranscriptProteinFeatureResult:
+def reference_structure(transcript, exons, translation):
     """Validate a model and derive exon, splice-window and CDS coordinates.
 
     Genomic positions remain on the reference strand. Pre-mRNA and CDS positions
     follow transcription direction; pre-mRNA includes introns, CDS does not.
     A missing translation produces a noncoding model with no CDS blocks.
-    Missing leading codon bases occupy peptide coordinates but have no genome
-    coordinates; the first CDS block starts after that offset.
     """
     strand = transcript["strand"]
     start, end = transcript["start"], transcript["end"]
@@ -882,7 +778,7 @@ def reference_structure(
     oriented = sorted(exons, key=lambda exon: exon["start"], reverse=strand == -1)
     if [exon["rank"] for exon in oriented] != list(range(1, len(exons) + 1)):
         raise ValueError("Exon ranks disagree with transcript strand/order")
-    result: TranscriptProteinFeatureResult = {
+    result = {
         "translation_id": translation["stable_id"] if translation else None,
         "protein_length": None,
         "chromosome": chromosome,
@@ -894,6 +790,7 @@ def reference_structure(
         "cds_blocks": [],
         "protein_features": [],
         "splice_sites": [],
+        "feature_groups": [],
         "assembly_name": assembly,
     }
     for number, exon in enumerate(oriented, 1):
@@ -936,7 +833,7 @@ def reference_structure(
                 disruption_start, disruption_end = genomic - 1, genomic + 2
             result["splice_sites"].append(
                 {
-                    "type": cast(Literal["acceptor", "donor"], site_type),
+                    "type": site_type,
                     "exon_number": number,
                     "genomic_position": genomic,
                     "premrna_position": position,
@@ -969,23 +866,10 @@ def reference_structure(
     if (strand == 1 and first_pos > last_pos) or (strand == -1 and first_pos < last_pos):
         raise ValueError("Translation start follows translation end")
     coding_lo, coding_hi = sorted((first_pos, last_pos))
-    # A 5'-incomplete CDS starts partway through the first peptide codon.
-    # Ensembl pads that codon with `phase` unknown bases when translating.
-    # Keep those peptide coordinates, but map only bases present in the genome:
-    # starting at phase + 1 also prevents a missing native start being retained.
-    phase = first["phase"]
-    if phase not in {-1, 0, 1, 2}:
-        raise ValueError("Invalid translation start exon phase")
-    start_phase = max(0, phase)
-    if start_phase:
-        result["cds_start_phase"] = start_phase
-    cds_pos = start_phase + 1
+    cds_pos = 1
     # Clip each exon to the coding span, then concatenate its CDS coordinates.
-    for prepared_exon in result["transcript_exons"]:
-        lo, hi = (
-            max(prepared_exon["genomic_start"], coding_lo),
-            min(prepared_exon["genomic_end"], coding_hi),
-        )
+    for exon in result["transcript_exons"]:
+        lo, hi = max(exon["genomic_start"], coding_lo), min(exon["genomic_end"], coding_hi)
         if lo > hi:
             continue
         length = hi - lo + 1
@@ -1006,19 +890,13 @@ def reference_structure(
     return result
 
 
-def protein_segments(
-    aa_start: int,
-    aa_end: int,
-    blocks: Sequence[CDSBlock],
-    *,
-    block_ends: Sequence[int] | None = None,
-) -> list[GenomicSegment]:
+def protein_segments(aa_start, aa_end, blocks, *, block_ends=None):
     """Map an inclusive amino-acid interval to genomic segments across CDS exons.
 
     Blocks are ordered by CDS position. Passing their end positions enables a
     binary search; callers mapping many features can reuse that index.
     """
-    segments: list[GenomicSegment] = []
+    segments = []
     cds_start, cds_end = (aa_start - 1) * 3 + 1, aa_end * 3
     # The preprocessor supplies a once-per-transcript index of ordered CDS blocks.
     if block_ends is not None:
@@ -1053,31 +931,66 @@ def protein_segments(
     return segments
 
 
+def reference_feature_groups(features):
+    """Group redundant hits while keeping repeated InterPro occurrences separate.
+
+    Returned indices refer to the unchanged feature list. Without an InterPro
+    accession, only exact source/accession/interval matches form a group.
+    """
+    exact, interpro = {}, {}
+    for index, feature in enumerate(features):
+        if feature["interpro_id"]:
+            interpro.setdefault(feature["interpro_id"], []).append(index)
+        else:
+            key = feature["source"], feature["feature_id"], feature["start"], feature["end"]
+            exact.setdefault(key, []).append(index)
+    groups = list(exact.values())
+    for indices in interpro.values():
+        occurrences = []
+        # The longest hit anchors an occurrence. Compare against that anchor,
+        # rather than chaining overlaps that could join separate repeat copies.
+        for index in sorted(
+            indices, key=lambda i: features[i]["end"] - features[i]["start"], reverse=True
+        ):
+            feature = features[index]
+            length = feature["end"] - feature["start"] + 1
+            for occurrence in occurrences:
+                anchor = features[occurrence[0]]
+                overlap = max(
+                    0,
+                    min(feature["end"], anchor["end"]) - max(feature["start"], anchor["start"]) + 1,
+                )
+                if overlap / min(length, anchor["end"] - anchor["start"] + 1) >= 0.5:
+                    occurrence.append(index)
+                    break
+            else:
+                occurrences.append([index])
+        groups.extend(occurrences)
+    return groups
+
+
 # Source compatibility checks and bulk protein annotation metadata.
 
 
-def protein_analyses(db: sqlite3.Connection) -> AnalysisMetadata:
+def protein_analyses(db: sqlite3.Connection):
     """Use database names for feature sources, not Ensembl pipeline names.
 
     For example, logic_name='hmmpanther' describes how the analysis ran;
-    db='PANTHER' identifies the annotation source stored with each feature.
+    db='PANTHER' identifies the annotation source exposed by the former API.
     Small offline fixtures may have only logic_name, so retain that fallback.
-    Structure pipelines override database labels so their mappings can always
-    be excluded from functional annotations.
     """
     analyses = {}
     for row in dict_rows(db, "SELECT * FROM ensembl_analysis"):
         source = row.get("db") or row["logic_name"]
-        logic_name = (row["logic_name"] or "").lower()
-        if logic_name in STRUCTURE_SOURCES:
-            source = logic_name
+        if (row["logic_name"] or "").lower() == "sifts":
+            source = "sifts"
         if (source or "").lower() in {"panther", "hmmpanther"}:
             source = "PANTHER"
         analyses[row["analysis_id"]] = (source, row.get("db_version"))
     return analyses
 
 
-def download_panther_classifications(version: str, cache: Path) -> tuple[Path, str, str]:
+def download_panther_classifications(version: str, cache: Path):
     """Fetch the exact release, accepting the historical trailing underscore.
 
     Prefer an already cached filename so archived files also work offline.
@@ -1105,7 +1018,7 @@ def download_panther_classifications(version: str, cache: Path) -> tuple[Path, s
     raise AssertionError("Unreachable")
 
 
-def panther_release(analyses: AnalysisMetadata) -> str | None:
+def panther_release(analyses):
     """Require one exact PANTHER release when automatic metadata is needed."""
     versions = {version for source, version in analyses.values() if source == "PANTHER"}
     if not versions:
@@ -1118,7 +1031,7 @@ def panther_release(analyses: AnalysisMetadata) -> str | None:
     return next(iter(versions))
 
 
-def panther_entry_rows(path: Path) -> Iterator[tuple[str, str, str]]:
+def panther_entry_rows(path: Path):
     """Read human UniProt-to-subfamily assignments from PANTHER's bulk TSV.
 
     Older files place the subfamily ID/name in columns 3/5; newer files use
@@ -1186,7 +1099,7 @@ def panther_entry_rows(path: Path) -> Iterator[tuple[str, str, str]]:
         bar.set_postfix(records=count, refresh=False)
 
 
-def panther_translation_annotations(db: sqlite3.Connection) -> dict[int, tuple[str, str]]:
+def panther_translation_annotations(db: sqlite3.Connection):
     """Match exact protein cross-references; never propagate by gene name.
 
     An ambiguous protein assignment is omitted. The caller also requires its
@@ -1195,7 +1108,7 @@ def panther_translation_annotations(db: sqlite3.Connection) -> dict[int, tuple[s
     tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if "ensembl_object_xref" not in tables:
         return {}
-    matches: dict[int, set[tuple[str, str]]] = {}
+    matches = {}
     # Start from the small human lookup and use the imported accession/xref
     # indexes, rather than scanning every row in the much larger core tables.
     for translation_id, subfamily, name in db.execute("""
@@ -1225,8 +1138,9 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
         )
     if metadata.get("species") != SPECIES:
         raise ValueError("Only human reference databases are supported")
+    # Earlier human-only builders omitted the assembly metadata key.
     if (
-        metadata.get("assembly") != ASSEMBLY
+        metadata.get("assembly", ASSEMBLY) != ASSEMBLY
         or not db.execute(
             "SELECT 1 FROM ensembl_coord_system WHERE version=? LIMIT 1", (ASSEMBLY,)
         ).fetchone()
@@ -1236,7 +1150,7 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
         raise ValueError("Reference metadata must contain a positive Ensembl release number")
     if (
         metadata.get("sequence_chunk_size") != str(CHUNK_SIZE)
-        or metadata.get("sequence_codec") != "zlib"
+        or metadata.get("sequence_codec", "zlib") != "zlib"
     ):
         raise ValueError("Unsupported sequence chunk format")
     if metadata.get("preprocessing_version") not in {None, "1"}:
@@ -1249,7 +1163,7 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
     return metadata
 
 
-def interpro_entry_rows(path: Path) -> Iterator[tuple[str, str | None, str | None]]:
+def interpro_entry_rows(path: Path):
     """Read current and archived InterPro entry lists with the same validation."""
     with input_progress(path, "Import InterPro", compressed=False, text=True) as (
         stream,
@@ -1276,9 +1190,7 @@ def interpro_entry_rows(path: Path) -> Iterator[tuple[str, str | None, str | Non
                 update()
 
 
-def restore_interpro_history(
-    db: sqlite3.Connection, metadata: InterProMetadata, cache: Path
-) -> tuple[dict[str, str], list[dict[str, str]]]:
+def restore_interpro_history(db, metadata, cache):
     """Supplement missing types, newest archive first; never overwrite current types.
 
     Explicit local entry lists do not trigger archive downloads.
@@ -1331,22 +1243,21 @@ def restore_interpro_history(
         if not missing:
             break
     if missing:
-        analyses = protein_analyses(db)
         used = {
             row[0]
             for row in sqlite_phase(
                 db,
                 """
-            SELECT DISTINCT i.interpro_ac, pf.analysis_id FROM ensembl_protein_feature pf
+            SELECT DISTINCT i.interpro_ac FROM ensembl_protein_feature pf
             JOIN ensembl_translation tr USING (translation_id)
             JOIN ensembl_transcript t ON t.transcript_id=tr.transcript_id
                                      AND t.canonical_translation_id=tr.translation_id
             JOIN ensembl_interpro i ON i.id=pf.hit_name
-            WHERE t.is_current=1
+            LEFT JOIN ensembl_analysis a USING (analysis_id)
+            WHERE t.is_current=1 AND LOWER(COALESCE(a.logic_name, '')) != 'sifts'
         """,
                 "Check unresolved InterPro metadata",
             )
-            if (analyses.get(row[1], (None, None))[0] or "").lower() not in STRUCTURE_SOURCES
         }
         missing.intersection_update(used)
     if missing:
@@ -1361,70 +1272,6 @@ def restore_interpro_history(
 # Derived-table preparation: one transaction, one transcript at a time.
 
 
-def _record_transcript_error(
-    summary: dict[str, TranscriptErrorSummary], transcript_id: str, message: str
-) -> None:
-    """Group errors by reason while keeping variable details in the stored payload."""
-    # CDS/peptide mismatch lengths and unsupported assembly names vary, so group
-    # by the fixed message prefix. Each original full error remains retrievable.
-    reason = message.partition(":")[0]
-    entry = summary.setdefault(reason, {"count": 0, "example_transcripts": []})
-    entry["count"] += 1
-    if len(entry["example_transcripts"]) < 3:
-        entry["example_transcripts"].append(transcript_id)
-
-
-def uniprot_lookup_fingerprint(
-    db: sqlite3.Connection, metadata: Mapping[str, str], input_sha256: str
-) -> str | None:
-    """Key verified lookups by XML, mapping code and immutable imported sources.
-
-    Source checksums describe the raw tables and sequences imported by the
-    builder. References without this provenance are reverified, never reused.
-    """
-    if not db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='source_files'"
-    ).fetchone():
-        return None
-    sources = list(db.execute("SELECT url, sha256, bytes FROM source_files ORDER BY url"))
-    if not sources or not all(row[1] for row in sources):
-        return None
-    fingerprint = {
-        "uniprot_sha256": input_sha256,
-        "mapping_sha256": sha256_file(Path(__file__).with_name("uniprot.py")),
-        "ensembl_sources": sources,
-        "reference": {
-            key: metadata.get(key)
-            for key in (
-                "format_version",
-                "release",
-                "species",
-                "assembly",
-                "sequence_codec",
-                "sequence_chunk_size",
-            )
-        },
-    }
-    return hashlib.sha256(json.dumps(fingerprint, sort_keys=True).encode()).hexdigest()
-
-
-def encode_transcript_payload(payload: ProteinFeatureResponse) -> str | bytes:
-    """Compress large models while keeping small error records SQL-readable.
-
-    Level 1 limits preprocessing CPU cost. This is lossless storage compression;
-    it does not remove features or change the annotation API's returned model.
-    """
-    encoded = json.dumps(payload, separators=(",", ":"))
-    return encoded if "error" in payload else zlib.compress(encoded.encode("utf-8"), level=1)
-
-
-def decode_transcript_payload(encoded: str | bytes) -> ProteinFeatureResponse:
-    """Decode compressed models or plain JSON errors and existing references."""
-    if isinstance(encoded, bytes):
-        encoded = zlib.decompress(encoded).decode("utf-8")
-    return cast("ProteinFeatureResponse", json.loads(encoded))
-
-
 def preprocess_reference(
     db: sqlite3.Connection,
     interpro_entries: Path | None = None,
@@ -1432,17 +1279,13 @@ def preprocess_reference(
     interpro_archive_cache: Path | None = None,
     panther_classifications: Path | None = None,
     panther_cache: Path | None = None,
-    uniprot_features: Path | None = None,
-    uniprot_source: dict[str, str] | None = None,
-) -> dict[str, int]:
+):
     """Build all derived tables in one transaction; leave prior tables on failure.
 
     Requires raw annotation tables and DNA/peptide FASTA. Invalid individual
     transcript models are recorded as errors, rather than silently corrected.
     No nucleotide sequences are duplicated in the derived transcript records.
     """
-    from .uniprot import CuratedFeature, import_features
-
     metadata = validate_reference_source(db)
     analyses = protein_analyses(db)
     panther_source = None
@@ -1453,16 +1296,6 @@ def preprocess_reference(
                 version, panther_cache
             )
             panther_source = {"version": version, "url": url, "sha256": digest}
-    if uniprot_features is not None and uniprot_source is None:
-        uniprot_source = {
-            "path": str(uniprot_features.resolve()),
-            "sha256": sha256_file(uniprot_features),
-        }
-    uniprot_fingerprint = (
-        uniprot_lookup_fingerprint(db, metadata, uniprot_source["sha256"])
-        if uniprot_features is not None and uniprot_source is not None
-        else None
-    )
     if panther_classifications is not None and panther_source is None:
         panther_source = {
             "path": str(panther_classifications.resolve()),
@@ -1470,51 +1303,11 @@ def preprocess_reference(
         }
     LOG.info("Preprocessing reference transcript models, domains and splice sites")
     db.commit()
-    # These are reproducible public reference annotations. Some SQLite builds
-    # default to zeroing deleted content, which rewrites entire large tables and
-    # their rollback journals. Reclaim pages without scrubbing; journaling and
-    # atomic rollback remain enabled. Restore the caller's setting on every exit.
-    secure_delete = int(db.execute("PRAGMA main.secure_delete").fetchone()[0])
-    # FAST reads back as 2, but setting the numeric value 2 means ON. Restore
-    # the keyword so a caller using FAST keeps that exact policy.
-    previous_secure_delete = ("OFF", "ON", "FAST")[secure_delete]
-    db.execute("PRAGMA main.secure_delete=OFF")
     # Derived-table replacement, including DDL, is atomic. A failed metadata
     # lookup or model build rolls back to the prior usable reference tables.
+    db.execute("BEGIN IMMEDIATE")
     transcript_progress = None
     try:
-        LOG.info(
-            "SQLite reference preprocessing: secure_delete=%s (previously %s), "
-            "journal_mode=%s, synchronous=%s, auto_vacuum=%s, page_size=%s",
-            db.execute("PRAGMA main.secure_delete").fetchone()[0],
-            previous_secure_delete,
-            db.execute("PRAGMA main.journal_mode").fetchone()[0],
-            db.execute("PRAGMA main.synchronous").fetchone()[0],
-            db.execute("PRAGMA main.auto_vacuum").fetchone()[0],
-            db.execute("PRAGMA main.page_size").fetchone()[0],
-        )
-        db.execute("BEGIN IMMEDIATE")
-        if uniprot_features is not None:
-            if (
-                uniprot_fingerprint is not None
-                and uniprot_fingerprint == metadata.get("uniprot_lookup_fingerprint")
-                and metadata.get("uniprot_counts") is not None
-                and db.execute(
-                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ff_uniprot_features'"
-                ).fetchone()
-            ):
-                LOG.info("Reusing sequence-verified UniProt lookups: inputs and mapping unchanged")
-                uniprot_counts = json.loads(metadata["uniprot_counts"])
-            else:
-                uniprot_counts = import_features(db, uniprot_features)
-        else:
-            uniprot_counts = None
-        # An offline low-level call can reuse already verified UniProt lookups.
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS ff_uniprot_features (sequence_id TEXT NOT NULL, "
-            "feature_id TEXT NOT NULL, payload TEXT NOT NULL, "
-            "PRIMARY KEY(sequence_id, feature_id)) WITHOUT ROWID"
-        )
         # Persist the bulk lookup so subsequent offline preprocessing can reuse it.
         # Import and all derived changes participate in the same rollback boundary.
         db.execute(
@@ -1546,18 +1339,13 @@ def preprocess_reference(
                 if has_interpro
                 else []
             )
-        for table in ("ff_transcripts", "ff_interpro"):
-            with sqlite_activity("Drop previous " + table):
-                db.execute("DROP TABLE IF EXISTS " + sql_name(table))
-        with sqlite_activity("Create derived transcript and InterPro tables"):
-            # Large model payloads belong in ordinary rowid-table leaves, not
-            # the intermediate nodes of a WITHOUT ROWID primary-key tree.
-            # Internal transcript-ID order then appends model rows sequentially;
-            # only the much smaller stable-ID index needs random inserts.
+        with sqlite_activity("Replace previous derived transcript and InterPro tables"):
+            db.execute("DROP TABLE IF EXISTS ff_transcripts")
+            db.execute("DROP TABLE IF EXISTS ff_interpro")
             db.execute(
-                "CREATE TABLE ff_transcripts (transcript_id TEXT NOT NULL PRIMARY KEY, version INTEGER, "
+                "CREATE TABLE ff_transcripts (transcript_id TEXT PRIMARY KEY, version INTEGER, "
                 "translation_id TEXT, translation_version INTEGER, status TEXT NOT NULL, "
-                "payload BLOB NOT NULL)"
+                "payload TEXT NOT NULL) WITHOUT ROWID"
             )
             db.execute(
                 "CREATE TABLE ff_interpro (interpro_id TEXT PRIMARY KEY, name TEXT, entry_type TEXT) WITHOUT ROWID"
@@ -1602,25 +1390,11 @@ def preprocess_reference(
             genome_lengths = dict(
                 db.execute("SELECT sequence_id, length FROM sequences WHERE kind='dna'")
             )
-            protein_lengths: dict[str, list[tuple[str, int]]] = {}
+            protein_lengths = {}
             for stable_id, sequence_id, length in db.execute(
                 "SELECT stable_id, sequence_id, length FROM sequences WHERE kind='pep'"
             ):
                 protein_lengths.setdefault(stable_id, []).append((sequence_id, length))
-        curated_features = GroupStream(
-            dict_rows(
-                db,
-                """
-            SELECT t.transcript_id, u.payload
-            FROM ensembl_transcript t JOIN ensembl_translation tr
-              ON tr.translation_id=t.canonical_translation_id
-            JOIN ff_uniprot_features u ON u.sequence_id IN
-              (tr.stable_id, tr.stable_id || '.' || tr.version)
-            WHERE t.is_current=1 ORDER BY t.transcript_id, u.feature_id
-        """,
-                description="Prepare ordered UniProt feature stream",
-            )
-        )
         # All three queries use the same ascending internal ID order. GroupStream
         # avoids per-transcript SQL queries and loading all exon/features into RAM.
         exons = GroupStream(
@@ -1629,7 +1403,7 @@ def preprocess_reference(
                 """
             SELECT et.transcript_id, et.rank, e.exon_id, e.seq_region_id,
                    e.seq_region_start AS start, e.seq_region_end AS end,
-                   e.seq_region_strand AS strand, e.phase
+                   e.seq_region_strand AS strand
             FROM ensembl_exon_transcript et JOIN ensembl_exon e USING (exon_id)
             ORDER BY et.transcript_id, et.rank
         """,
@@ -1678,8 +1452,7 @@ def preprocess_reference(
             description="Prepare transcript stream",
         )
         counts = {"ready": 0, "noncoding": 0, "error": 0, "protein_features": 0}
-        errors: dict[str, TranscriptErrorSummary] = {}
-        missing_entry_types: set[str] = set()
+        missing_entry_types = set()
         total = sqlite_phase(
             db,
             "SELECT COUNT(*) FROM ensembl_transcript t "
@@ -1691,11 +1464,9 @@ def preprocess_reference(
         transcript_progress = progress(
             transcripts, total=total, desc="Preprocess transcripts", unit="transcript"
         )
-        payload: ProteinFeatureResponse
         for number, transcript in enumerate(transcript_progress, 1):
             exon_rows = exons.take(transcript["internal_id"])
             feature_rows = features.take(transcript["internal_id"])
-            curated_rows = curated_features.take(transcript["internal_id"])
             translation = None
             if transcript["canonical_translation_id"] is not None:
                 translation = {**transcript, "stable_id": transcript["translation_id"]}
@@ -1726,37 +1497,30 @@ def preprocess_reference(
                         raise ValueError(
                             "Canonical translation peptide is missing/ambiguous or has a different version"
                         )
-                    protein_length = candidates[0][1]
-                    payload["protein_length"] = protein_length
+                    payload["protein_length"] = candidates[0][1]
                     cds_length = sum(
                         block["cds_end"] - block["cds_start"] + 1 for block in payload["cds_blocks"]
                     )
-                    # Include Ensembl's virtual leading codon bases in the length
-                    # comparison, without adding them to genomic CDS blocks.
-                    # Peptide FASTA omits the optional terminal stop codon.
-                    start_phase = payload.get("cds_start_phase", 0)
-                    if cds_length + start_phase not in {protein_length * 3, protein_length * 3 + 3}:
+                    # Ensembl CDS lengths may include the terminal stop codon,
+                    # whereas peptide FASTA lengths omit it. Accept either form.
+                    if cds_length not in {
+                        payload["protein_length"] * 3,
+                        payload["protein_length"] * 3 + 3,
+                    }:
                         raise ValueError(
-                            f"CDS/peptide length mismatch: {cds_length} bp, {protein_length} aa, "
-                            f"start phase {start_phase}"
+                            f"CDS/peptide length mismatch: {cds_length} bp, {payload['protein_length']} aa; possible sequence edits"
                         )
                     block_ends = [block["cds_end"] for block in payload["cds_blocks"]]
                     # Multiple signatures/InterPro mappings can share an interval.
                     # Reuse coordinates within this transcript, then discard them.
-                    segment_cache: dict[tuple[int, int], tuple[list[GenomicSegment], int, int]] = {}
+                    segment_cache = {}
                     for feature in feature_rows:
                         source = analyses.get(feature["analysis_id"], (feature["source"], None))[0]
-                        if (source or "").lower() in STRUCTURE_SOURCES:
-                            # Whole-protein structure mappings are not domains/sites.
-                            # Exclude them before validating functional coordinates:
-                            # their intervals may exceed this transcript's peptide.
+                        if (source or "").lower() == "sifts":
+                            # Structure mappings are outside our functional feature list.
                             continue
-                        if not 1 <= feature["start"] <= feature["end"] <= protein_length:
-                            raise ValueError(
-                                f"Protein feature falls outside peptide: {source} "
-                                f"{feature['feature_id']} {feature['start']}-{feature['end']}, "
-                                f"peptide length {protein_length}"
-                            )
+                        if not 1 <= feature["start"] <= feature["end"] <= payload["protein_length"]:
+                            raise ValueError("Protein feature falls outside peptide")
                         interval = feature["start"], feature["end"]
                         mapped = segment_cache.get(interval)
                         if mapped is None:
@@ -1808,48 +1572,15 @@ def preprocess_reference(
                                 "panther_subfamily_description": subfamily_name,
                             }
                         )
-                    for curated_row in curated_rows:
-                        curated = cast(CuratedFeature, json.loads(curated_row["payload"]))
-                        start, end = curated["start"], curated["end"]
-                        if not 1 <= start <= end <= protein_length:
-                            raise ValueError("Verified UniProt feature falls outside peptide")
-                        segments = protein_segments(
-                            start, end, payload["cds_blocks"], block_ends=block_ends
-                        )
-                        payload["protein_features"].append(
-                            {
-                                "feature_id": curated["feature_id"],
-                                "feature_type": curated["feature_type"],
-                                "description": curated["description"],
-                                "start": start,
-                                "end": end,
-                                "uniprot_accession": curated["uniprot_accession"],
-                                "uniprot_isoform": curated["uniprot_isoform"],
-                                "evidence": curated["evidence"],
-                                "source": "UniProtKB",
-                                "interpro_id": None,
-                                "cds_start": (start - 1) * 3 + 1,
-                                "cds_end": end * 3,
-                                "chromosome": transcript["chromosome"],
-                                "strand": transcript["strand"],
-                                "assembly_name": transcript["assembly_name"],
-                                "genomic_start": min(segment["start"] for segment in segments),
-                                "genomic_end": max(segment["end"] for segment in segments),
-                                "genomic_segments": segments,
-                                "interpro_name": None,
-                                "interpro_entry_type": None,
-                                "panther_subfamily_id": None,
-                                "panther_subfamily_description": None,
-                            }
-                        )
+                    payload["feature_groups"] = reference_feature_groups(
+                        payload["protein_features"]
+                    )
                     counts["protein_features"] += len(payload["protein_features"])
             except ValueError as exc:
                 # Preserve the reason for unsupported models so readers can explain
                 # the failure, rather than reporting that the transcript is absent.
                 status, payload = "error", {"error": f"{transcript['transcript_id']}: {exc}"}
-                _record_transcript_error(errors, transcript["transcript_id"], str(exc))
             if status == "ready":
-                payload = cast("TranscriptProteinFeatureResult", payload)
                 missing_entry_types.update(
                     feature["interpro_id"]
                     for feature in payload["protein_features"]
@@ -1864,7 +1595,7 @@ def preprocess_reference(
                     transcript["translation_id"],
                     transcript["translation_version"],
                     status,
-                    encode_transcript_payload(payload),
+                    json.dumps(payload, separators=(",", ":")),
                 ),
             )
             if number % 1000 == 0:
@@ -1882,15 +1613,10 @@ def preprocess_reference(
             db.execute("CREATE INDEX ff_transcript_translation ON ff_transcripts (translation_id)")
             db.execute("CREATE INDEX ff_transcript_status ON ff_transcripts (status)")
         # Keep provenance in the same transaction as the tables it describes.
-        errors = dict(sorted(errors.items(), key=lambda item: (-item[1]["count"], item[0])))
         preprocessing_metadata = {
             "preprocessing_version": "1",
-            "feature_annotation_version": "3",
-            "cds_mapping_version": "2",
-            "transcript_payload_codec": TRANSCRIPT_PAYLOAD_CODEC,
             "preprocessing_counts": json.dumps(counts),
-            "preprocessing_errors": json.dumps(errors),
-            "preprocessed_utc": datetime.now(timezone.utc).isoformat(),
+            "preprocessed_utc": datetime.now(UTC).isoformat(),
             "interpro_entries_sha256": (
                 sha256_file(interpro_entries)
                 if interpro_entries
@@ -1907,14 +1633,6 @@ def preprocess_reference(
                 else metadata.get("interpro_preserved_metadata_sha256", "")
             ),
         }
-        if uniprot_source is not None:
-            preprocessing_metadata["uniprot_features_source"] = json.dumps(
-                uniprot_source, sort_keys=True
-            )
-            preprocessing_metadata["uniprot_counts"] = json.dumps(uniprot_counts, sort_keys=True)
-            # An import without recorded source provenance invalidates any
-            # prior reuse key. Empty values never permit reuse.
-            preprocessing_metadata["uniprot_lookup_fingerprint"] = uniprot_fingerprint or ""
         if panther_source is not None:
             preprocessing_metadata["panther_classifications_source"] = json.dumps(
                 panther_source, sort_keys=True
@@ -1935,24 +1653,14 @@ def preprocess_reference(
             db.rollback()
         raise
     finally:
-        try:
-            if transcript_progress is not None:
-                transcript_progress.close()
-        finally:
-            db.execute(f"PRAGMA main.secure_delete={previous_secure_delete}")
+        if transcript_progress is not None:
+            transcript_progress.close()
     LOG.info("Preprocessing complete: %s", counts)
     if counts["error"]:
         LOG.warning(
             "%s transcripts have stored errors; inspect ff_transcripts WHERE status='error'",
             counts["error"],
         )
-        for reason, summary in errors.items():
-            LOG.warning(
-                "  %s: %s transcript(s); examples: %s",
-                reason,
-                f"{summary['count']:,}",
-                ", ".join(summary["example_transcripts"]),
-            )
     return counts
 
 
@@ -1962,56 +1670,33 @@ def preprocess_reference(
 class ReferenceReader:
     """Read-only local reference access; reuse one reader across fusion calls.
 
-    get_transcript() returns prepared coordinates, splice sites and features,
-    reconstructing pre-mRNA from the genome when requested.
+    get_transcript() is compatible with the existing Ensembl transcript-result
+    dictionary, including splice sites and feature groups used by annotation.
     Genome chunk caching is LRU and bounded (default at most 64 MiB); no
     transcript sequences are cached.
     The reader is intended for one thread; use a separate reader per worker.
     """
 
-    def __init__(self, database: str | Path, cached_chunks: int = 64) -> None:
+    def __init__(self, database: str | Path, cached_chunks: int = 64):
         """Open an existing preprocessed database and configure the chunk cache."""
         if cached_chunks < 0:
             raise ValueError("cached_chunks must be nonnegative")
         path = Path(database).expanduser().resolve()
         self.db = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
         self.cached_chunks = cached_chunks
-        self.chunk_cache: ChunkCache = OrderedDict()
+        self.chunk_cache = OrderedDict()
         try:
             metadata = dict(self.db.execute("SELECT key, value FROM build_metadata"))
             if metadata.get("preprocessing_version") != "1":
                 raise ValueError("Database is not preprocessed; run --preprocess-only DB")
             if metadata.get("sequence_chunk_size") != str(CHUNK_SIZE):
                 raise ValueError("Unsupported sequence chunk size")
-            if metadata.get("transcript_payload_codec") not in {None, TRANSCRIPT_PAYLOAD_CODEC}:
-                raise ValueError("Unsupported transcript payload codec")
             self.metadata = metadata
         except BaseException:
             self.db.close()
             raise
 
-    def transcript_error_summary(self) -> dict[str, TranscriptErrorSummary]:
-        """Read grouped failures with example IDs without rebuilding the reference.
-
-        Prepared summaries are cheap metadata reads. If one is absent, inspect
-        only stored error payloads; usable transcript payloads are never loaded.
-        """
-        if "preprocessing_errors" in self.metadata:
-            return cast(
-                dict[str, TranscriptErrorSummary], json.loads(self.metadata["preprocessing_errors"])
-            )
-        errors: dict[str, TranscriptErrorSummary] = {}
-        for transcript_id, encoded in self.db.execute(
-            "SELECT transcript_id, payload FROM ff_transcripts WHERE status='error' ORDER BY transcript_id"
-        ):
-            payload = cast("EnsemblError", decode_transcript_payload(encoded))
-            message = payload["error"].removeprefix(transcript_id + ": ")
-            _record_transcript_error(errors, transcript_id, message)
-        return dict(sorted(errors.items(), key=lambda item: (-item[1]["count"], item[0])))
-
-    def get_transcript(
-        self, transcript_id: str, *, include_sequence: bool = True
-    ) -> ProteinFeatureResponse:
+    def get_transcript(self, transcript_id: str, *, include_sequence: bool = True):
         """Unknown IDs, version mismatches and unsupported models return errors."""
         match = re.fullmatch(r"(ENST\d+)(?:\.(\d+))?", transcript_id)
         if not match:
@@ -2030,23 +1715,20 @@ class ReferenceReader:
             }
         if status == "noncoding":
             return {"error": "Transcript is non-coding or has no translation object"}
-        payload = decode_transcript_payload(encoded)
+        payload = json.loads(encoded)
         if status == "error":
             return payload
-        payload = cast("TranscriptProteinFeatureResult", payload)
         if include_sequence:
             payload["premrna_sequence"] = self.sequence(
                 "dna",
-                cast(str, payload["chromosome"]),
+                payload["chromosome"],
                 payload["transcript_genomic_start"],
                 payload["transcript_genomic_end"],
                 payload["strand"],
             )
         return payload
 
-    def sequence(
-        self, kind: str, sequence_id: str, start: int = 1, end: int | None = None, strand: int = 1
-    ) -> str:
+    def sequence(self, kind: str, sequence_id: str, start=1, end=None, strand=1):
         """Read a sequence interval through this reader's shared bounded cache."""
         return fetch_sequence(
             self.db,
@@ -2059,7 +1741,7 @@ class ReferenceReader:
             _cache_limit=self.cached_chunks,
         )
 
-    def get_interpro_annotation(self, accession: str) -> ProteinFeatureAnnotation | None:
+    def get_interpro_annotation(self, accession):
         """Return stored metadata for an accession, or None when it is absent."""
         row = self.db.execute(
             "SELECT name, entry_type FROM ff_interpro WHERE interpro_id=?", (accession,)
@@ -2068,21 +1750,16 @@ class ReferenceReader:
             return None
         return {"name": row[0], "entry_type": row[1], "interpro_id": accession}
 
-    def close(self) -> None:
+    def close(self):
         """Release both the database handle and decompressed genome chunks."""
         self.chunk_cache.clear()
         self.db.close()
 
-    def __enter__(self) -> Self:
+    def __enter__(self):
         """Use this reader as a context manager."""
         return self
 
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
+    def __exit__(self, *_):
         """Close the reader even when annotation raises an exception."""
         self.close()
 
@@ -2091,7 +1768,7 @@ class ReferenceReader:
 
 
 @contextmanager
-def build_lock(path: Path) -> Iterator[None]:
+def build_lock(path: Path):
     """Keep concurrent builders from modifying the same resumable database.
 
     Advisory locks are released by the OS even after a killed process. Leave the
@@ -2105,7 +1782,7 @@ def build_lock(path: Path) -> Iterator[None]:
                 stream.write(b"\0")
                 stream.flush()
                 stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]  # Windows-only API
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
             else:
                 import fcntl
 
@@ -2117,7 +1794,7 @@ def build_lock(path: Path) -> Iterator[None]:
         finally:
             if os.name == "nt":
                 stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]  # Windows-only API
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
             else:
                 fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
@@ -2125,7 +1802,7 @@ def build_lock(path: Path) -> Iterator[None]:
 class BuildCheckpoint:
     """Record completed stages only after their SQLite work has committed."""
 
-    def __init__(self, db: sqlite3.Connection, configuration: Mapping[str, object]) -> None:
+    def __init__(self, db, configuration):
         self.db = db
         db.execute(
             "CREATE TABLE IF NOT EXISTS build_checkpoints ("
@@ -2142,7 +1819,7 @@ class BuildCheckpoint:
         if previous is None:
             self.save("configuration", fingerprint=fingerprint)
 
-    def read(self, stage: str) -> CheckpointRecord | None:
+    def read(self, stage):
         """Read one stage's source provenance and completion marker."""
         row = self.db.execute(
             "SELECT source, fingerprint, count, complete FROM build_checkpoints WHERE stage=?",
@@ -2157,15 +1834,7 @@ class BuildCheckpoint:
             "complete": bool(row[3]),
         }
 
-    def save(
-        self,
-        stage: str,
-        *,
-        source: Mapping[str, Any] | None = None,
-        fingerprint: str = "",
-        count: int = 0,
-        complete: bool = True,
-    ) -> None:
+    def save(self, stage, *, source=None, fingerprint="", count=0, complete=True):
         """Commit a marker with the work it describes; incomplete stages can resume."""
         self.db.execute(
             "INSERT OR REPLACE INTO build_checkpoints VALUES (?, ?, ?, ?, ?)",
@@ -2174,18 +1843,16 @@ class BuildCheckpoint:
         self.db.commit()
 
 
-def build(args: argparse.Namespace) -> Path:
+def build(args) -> Path:
     """Resume committed imports in a staging database, then publish atomically.
 
     Failures preserve the staging database and downloads. Repeating the same
     command skips completed stages; no incomplete reference replaces the output.
     """
-    from .uniprot import UNIPROT_HUMAN_URL
-
     cache = args.cache_dir.expanduser().resolve()
     base = args.base_url.rstrip("/") + "/"
     # Resolution, metadata/schema, tables, FASTA, preprocessing, analysis, check, publication.
-    steps = BuildSteps(1 + 3 + len(TABLES) + len(SEQUENCE_TYPES) + 4)
+    steps = BuildSteps(1 + 2 + len(TABLES) + len(SEQUENCE_TYPES) + 4)
     with steps.step("Resolve Ensembl release and human GRCh38 core directory"):
         release, root, core = resolve_core(base, args.release)
     LOG.info("Resolved Ensembl release %s; core database %s", release, core)
@@ -2214,7 +1881,7 @@ def build(args: argparse.Namespace) -> Path:
     source_rows = []
     fetch_interpro = args.interpro_entries is None
 
-    def get(url: str, group: str = "core", *, directory: Path | None = None) -> Path:
+    def get(url, group="core", *, directory=None):
         """Download/cache one source and retain its checksum/size for provenance."""
         path, digest = download(url, directory if directory is not None else downloads / group)
         source_rows.append((url, digest, path.stat().st_size))
@@ -2229,17 +1896,6 @@ def build(args: argparse.Namespace) -> Path:
             else:
                 interpro_entries = args.interpro_entries
                 LOG.info("Using local InterPro entries: %s", interpro_entries)
-        with steps.step("Prepare reviewed human UniProt features"):
-            if args.uniprot_features is None:
-                uniprot_features = get(UNIPROT_HUMAN_URL, directory=cache / "metadata" / "uniprot")
-                uniprot_source = {"url": UNIPROT_HUMAN_URL, "sha256": source_rows[-1][1]}
-            else:
-                uniprot_features = args.uniprot_features
-                uniprot_source = {
-                    "path": str(uniprot_features),
-                    "sha256": sha256_file(uniprot_features),
-                }
-                LOG.info("Using local UniProt features: %s", uniprot_features)
         with steps.step("Download and read Ensembl table definitions"):
             schema = parse_schema(get(core_url + core + ".sql.gz"))
             absent = set(TABLES) - set(schema)
@@ -2270,7 +1926,7 @@ def build(args: argparse.Namespace) -> Path:
                 },
             )
 
-            def reuse(stage: str) -> int | None:
+            def reuse(stage):
                 """Reuse a completed import and its recorded source provenance."""
                 saved = checkpoint.read(stage)
                 if saved and saved["complete"]:
@@ -2280,7 +1936,7 @@ def build(args: argparse.Namespace) -> Path:
                     return saved["count"]
                 return None
 
-            def last_source() -> SourceRecord:
+            def last_source():
                 """Describe the most recently verified download."""
                 url, digest, size = source_rows[-1]
                 return {"url": url, "sha256": digest, "bytes": size}
@@ -2362,7 +2018,7 @@ def build(args: argparse.Namespace) -> Path:
                 "species": args.species,
                 "core_database": core,
                 "assembly": ASSEMBLY,
-                "created_utc": datetime.now(timezone.utc).isoformat(),
+                "created_utc": datetime.now(UTC).isoformat(),
                 "sequence_chunk_size": str(CHUNK_SIZE),
                 "sequence_codec": "zlib",
                 "tables": json.dumps(TABLES),
@@ -2381,13 +2037,6 @@ def build(args: argparse.Namespace) -> Path:
                 fingerprint = json.dumps(
                     {
                         "implementation": sha256_file(Path(__file__)),
-                        "uniprot_implementation": sha256_file(
-                            Path(__file__).with_name("uniprot.py")
-                        ),
-                        "ensembl_implementation": sha256_file(
-                            Path(__file__).with_name("ensembl.py")
-                        ),
-                        "uniprot_sha256": sha256_file(uniprot_features),
                         "interpro_sha256": sha256_file(interpro_entries),
                         "fetch_interpro": fetch_interpro,
                         "panther_sha256": (
@@ -2410,8 +2059,6 @@ def build(args: argparse.Namespace) -> Path:
                         interpro_archive_cache=interpro_cache if fetch_interpro else None,
                         panther_classifications=args.panther_classifications,
                         panther_cache=cache / "metadata" / "panther",
-                        uniprot_features=uniprot_features,
-                        uniprot_source=uniprot_source,
                     )
                     checkpoint.save("preprocessing", fingerprint=fingerprint)
             with steps.step("Analyze database indexes"):
@@ -2443,7 +2090,7 @@ def build(args: argparse.Namespace) -> Path:
     return output
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv=None) -> int:
     """Validate CLI options, then run a full build or derived-table regeneration."""
     parser = argparse.ArgumentParser(
         prog="fusion-function prepare-data",
@@ -2489,12 +2136,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         metavar="TSV",
         help="Optional local PANTHER human classification TSV; default: Ensembl's PANTHER release",
     )
-    parser.add_argument(
-        "--uniprot-features",
-        type=Path,
-        metavar="XML",
-        help="Local UniProt XML (optionally gzip); default: reviewed human bulk download",
-    )
     args = parser.parse_args(argv)
     if args.release is not None and args.release <= 0:
         parser.error("--release must be positive")
@@ -2518,10 +2159,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(
                 f"PANTHER classification file does not exist: {args.panther_classifications}"
             )
-    if args.uniprot_features:
-        args.uniprot_features = args.uniprot_features.expanduser().resolve()
-        if not args.uniprot_features.is_file():
-            parser.error(f"UniProt feature file does not exist: {args.uniprot_features}")
     args.species = args.species or SPECIES
     args.base_url = args.base_url or BASE_URL
     args.force = bool(args.force)
@@ -2542,7 +2179,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         "Historical InterPro entry-list cache: %s",
         args.cache_dir / "metadata" / "interpro" / "releases",
     )
-    LOG.info("UniProt feature cache: %s", args.cache_dir / "metadata" / "uniprot")
     LOG.info("PANTHER human classification cache: %s", args.cache_dir / "metadata" / "panther")
     LOG.info("Partial downloads are created beside cached files as <filename>.<random>.part")
     if args.interpro_entries:
@@ -2560,7 +2196,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     output,
                     output,
                 )
-                steps = BuildSteps(4)
+                steps = BuildSteps(3)
                 with closing(sqlite3.connect(output.as_uri() + "?mode=rw", uri=True)) as db:
                     with steps.step("Validate existing reference database"):
                         validate_reference_source(db)
@@ -2572,21 +2208,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                             interpro_entries = args.interpro_entries
                             archive_cache = None
                             LOG.info("Using local InterPro entries: %s", interpro_entries)
-                    with steps.step("Prepare reviewed human UniProt features"):
-                        from .uniprot import UNIPROT_HUMAN_URL
-
-                        if args.uniprot_features is None:
-                            uniprot_features, digest = download(
-                                UNIPROT_HUMAN_URL, args.cache_dir / "metadata" / "uniprot"
-                            )
-                            uniprot_source = {"url": UNIPROT_HUMAN_URL, "sha256": digest}
-                        else:
-                            uniprot_features = args.uniprot_features
-                            uniprot_source = {
-                                "path": str(uniprot_features),
-                                "sha256": sha256_file(uniprot_features),
-                            }
-                            LOG.info("Using local UniProt features: %s", uniprot_features)
                     with steps.step("Preprocess transcripts, domains and splice sites"):
                         preprocess_reference(
                             db,
@@ -2594,8 +2215,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                             interpro_archive_cache=archive_cache,
                             panther_classifications=args.panther_classifications,
                             panther_cache=args.cache_dir / "metadata" / "panther",
-                            uniprot_features=uniprot_features,
-                            uniprot_source=uniprot_source,
                         )
                 steps.complete()
             else:
@@ -2610,14 +2229,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     / "ensembl.sqlite",
                 )
                 output = build(args)
-        except (
-            OSError,
-            ValueError,
-            sqlite3.Error,
-            urllib.error.URLError,
-            EOFError,
-            ParseError,
-        ) as exc:
+        except (OSError, ValueError, sqlite3.Error, urllib.error.URLError, EOFError) as exc:
             LOG.error("Build failed: %s", exc)
             return 1
         except KeyboardInterrupt:
