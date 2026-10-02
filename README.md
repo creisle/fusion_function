@@ -1,4 +1,4 @@
-# fusion_function
+# Fusion-function
 
 ![Coverage](https://raw.githubusercontent.com/creisle/fusion_function/badges/badges/main/coverage.svg)
 
