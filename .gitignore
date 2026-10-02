@@ -11,3 +11,5 @@ fusion_function_*.tar.gz
 benchmark-*json
 *.log
 run_db_update.sh
+/*.zip
+nohup.out

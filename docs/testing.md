@@ -49,18 +49,9 @@ pytest --human-reference-db=/path/to/ensembl.sqlite
 
 Other tests cover reference configuration, invalid CLI options, both-strand preprocessing, rollback, progress totals and cleanup, the cross-assembly validation bug, and PANTHER source normalization and bulk subfamily matching. PANTHER checks include a missing-feature reproduction, family/protein mismatches, ambiguous assignments, offline reuse, provenance and rollback. A run that skips the full-reference tests does not validate a production database.
 
-Build tests inject failures after DNA import, before preprocessing, and during
-integrity checking. Retrying skips completed imports and preprocessing while
-preserving the previous final reference until publication. Controlled FASTA
-interrupts verify committed-record reuse and orphan-chunk cleanup. Additional
-checks reject mismatched checkpoint settings and concurrent writers. PANTHER
-14.1 tests cover the trailing-underscore filename and older column layout,
-exact-release provenance, verified offline cache reuse, and propagation of
-errors other than 404. Column-format checks cover unassigned and unnamed
-records, malformed IDs, and keeping family descriptions and GO terms out of
-subfamily names.
+Build tests inject failures after DNA import, before preprocessing, and during integrity checking. Retrying skips completed imports and preprocessing while preserving the previous final reference until publication. Controlled FASTA interrupts verify committed-record reuse and orphan-chunk cleanup. Additional checks reject mismatched checkpoint settings and concurrent writers. PANTHER 14.1 tests cover the trailing-underscore filename and older column layout, exact-release provenance, verified offline cache reuse, and propagation of errors other than 404. Column-format checks cover unassigned and unnamed records, malformed IDs, and keeping family descriptions and GO terms out of subfamily names.
 
-Progress tests also verify elapsed-time updates during a blocked SQLite call without progress callbacks, redirected-log heartbeats, named preprocessing phases, and timer cleanup on failures. Database calls remain on the caller's thread.
+Progress tests also verify start/outcome logs without SQLite timer bars, advance notices for potentially long operations, named preprocessing phases, and progress-handler cleanup on failures. Database calls remain on the caller's thread.
 
 Single-gene integration cases verify retained-portion splicing and translation predictions alongside the explicit disruptive assumption. A C/N case verifies identical results to the corresponding N/C reconstruction. Lightweight checks cover missing inputs, invalid breakpoint errors, and `NotImplementedError` for N/N and C/C pairs before database access. Same-transcript N/C fixtures verify one initiation summary for the final product, including a UTR-only N-terminal portion followed by a retained C-terminal native start.
 
@@ -72,27 +63,10 @@ UniProt tests run offline using captured human AMACR XML and independently downl
 
 The AMACR fixtures were captured from `https://rest.uniprot.org/uniprotkb/Q9UHK6.xml`, its canonical sequence, and `https://rest.uniprot.org/uniprotkb/Q9UHK6-5.fasta` on 2026-10-01. They are small source captures, not a built human reference.
 
-Repeated-preparation tests verify UniProt lookup reuse and invalidation when the
-XML, mapping implementation, Ensembl source checksums, release or lookup table
-changes. References without source checksums are reverified. Error-summary tests
-check grouping, sample limits and read-only inspection of existing references
-without a saved summary.
+Repeated-preparation tests verify UniProt lookup reuse and invalidation when the XML, mapping implementation, Ensembl source checksums, release or lookup table changes. References without source checksums are reverified. Error-summary tests check grouping, sample limits and read-only inspection of existing references without a saved summary.
 
-Partial-codon regressions cover both strands, missing one or two leading bases,
-presence/absence of a terminal stop codon, and single N- or C-terminal partners.
-They independently check per-base genomic feature mapping, incomplete first
-residues, alternative initiation and preserved downstream features. Built-reference
-tests check the three reported release-100/116 transcripts; older prepared models
-that still store their length errors fail these checks.
+Partial-codon regressions cover both strands, missing one or two leading bases, presence/absence of a terminal stop codon, and single N- or C-terminal partners. They independently check per-base genomic feature mapping, incomplete first residues, alternative initiation and preserved downstream features. Built-reference tests check the three reported release-100/116 transcripts; older prepared models that still store their length errors fail these checks.
 
-Structure-filter tests verify that AlphaFold/SIFTS mappings are omitted whether
-their intervals fit the peptide or exceed it, including differing pipeline and
-database labels. Actual functional features remain unchanged, and invalid domain
-coordinates still reject the transcript. Three built-reference checks cover the
-reported AlphaFold failures; older prepared models storing these errors fail.
+Structure-filter tests verify that AlphaFold/SIFTS mappings are omitted whether their intervals fit the peptide or exceed it, including differing pipeline and database labels. Actual functional features remain unchanged, and invalid domain coordinates still reject the transcript. Three built-reference checks cover the reported AlphaFold failures; older prepared models storing these errors fail.
 
-Compact-storage tests compare all 15 complete fusion regression outputs against
-compressed transcript models, check ordinary row storage and readable JSON
-errors, and reject unknown codecs. Existing plain-JSON fixtures remain readable.
-Rollback checks exercise the new storage while preserving the prior reference
-and the caller's secure-delete, journal and synchronous settings.
+Compact-storage tests compare all 15 complete fusion regression outputs against compressed transcript models, check ordinary row storage and readable JSON errors, and reject unknown codecs. Existing plain-JSON fixtures remain readable. Rollback checks exercise the new storage while preserving the prior reference and the caller's secure-delete, journal and synchronous settings.

@@ -54,23 +54,14 @@ This is a structural prediction and does not model tissue-specific splice abunda
 
 For each predicted splice product, retained CDS fragments are mapped into fusion-product coordinates.
 
-The first retained native ATG in the spliced product supplies initiation. This
-normally comes from the N-terminal partner; a surviving C-terminal native start
-can supply initiation when the N-terminal portion contains only UTR sequence.
-Each product has one selected initiation site, including when both breakpoints
-use the same transcript. Distinct initiation statuses from alternative splice
-products are deduplicated and joined with `/`, as for other status fields.
+The first retained native ATG in the spliced product supplies initiation. This normally comes from the N-terminal partner; a surviving C-terminal native start can supply initiation when the N-terminal portion contains only UTR sequence. Each product has one selected initiation site, including when both breakpoints use the same transcript. Distinct initiation statuses from alternative splice products are deduplicated and joined with `/`, as for other status fields.
 
 Coding phase is compared with the original source CDS to determine whether each product is:
 
 - `in_frame`
 - `out_of_frame`
 
-If no native ATG survives and the product retains annotated coding sequence,
-translation is modelled from its first ATG. This applies to N/C fusions and to
-single N- or C-terminal portions. Searching the complete spliced sequence also
-includes ATGs formed across the fusion junction. The search does not skip an
-earlier out-of-frame ATG in favour of a later in-frame one.
+If no native ATG survives and the product retains annotated coding sequence, translation is modelled from its first ATG. This applies to N/C fusions and to single N- or C-terminal portions. Searching the complete spliced sequence also includes ATGs formed across the fusion junction. The search does not skip an earlier out-of-frame ATG in favour of a later in-frame one.
 
 The overall fusion result summarizes all predicted products.
 
@@ -96,10 +87,7 @@ This considers only whether the original feature coordinates fall within the ret
 
 ### Post-splicing status
 
-For both fully and partially retained features, the portion retained by the
-breakpoint is mapped through each predicted splice product. Splicing removes a
-feature if it removes any of that retained portion. Bases already excluded by
-the breakpoint do not count as a further splicing loss.
+For both fully and partially retained features, the portion retained by the breakpoint is mapped through each predicted splice product. Splicing removes a feature if it removes any of that retained portion. Bases already excluded by the breakpoint do not count as a further splicing loss.
 
 A feature can be:
 
@@ -110,9 +98,7 @@ A feature can be:
 
 For features preserved through splicing, the reconstructed translation is assessed.
 
-Frame comparisons use the original CDS position of the retained portion,
-including when a breakpoint cuts within a codon. A downstream `preserved` status
-does not restore a disrupted domain: it describes the surviving portion only.
+Frame comparisons use the original CDS position of the retained portion, including when a breakpoint cuts within a codon. A downstream `preserved` status does not restore a disrupted domain: it describes the surviving portion only.
 
 Possible classifications include:
 
@@ -123,15 +109,7 @@ Possible classifications include:
 - `premature_termination_disrupted`
 - `premature_termination_excluded`
 
-For a single known partner, the retained portion is modelled separately.
-N/None and C/None are supported; two known partners with N/N or C/C termini
-raise `NotImplementedError`. The normal splice-site rules apply to the known sequence.
-Both N- and C-terminal portions use a native ATG when present after splicing;
-otherwise, if coding sequence remains, translation is modelled from the first
-remaining ATG under the same rules as a two-partner fusion.
-Features before or overlapping the selected start receive the corresponding
-translation-start exclusion or disruption status. The event assumption remains
-`assumed_disruptive: True`, independent of the individual feature predictions.
+For a single known partner, the retained portion is modelled separately. N/None and C/None are supported; two known partners with N/N or C/C termini raise `NotImplementedError`. The normal splice-site rules apply to the known sequence. Both N- and C-terminal portions use a native ATG when present after splicing; otherwise, if coding sequence remains, translation is modelled from the first remaining ATG under the same rules as a two-partner fusion. Features before or overlapping the selected start receive the corresponding translation-start exclusion or disruption status. The event assumption remains `assumed_disruptive: True`, independent of the individual feature predictions.
 
 ## 8. Protein feature annotation
 

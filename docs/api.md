@@ -30,9 +30,7 @@ Annotates retained functional features for one or two Ensembl transcripts. A pro
 
 Ensembl transcript IDs for the two fusion partners.
 
-For a single known gene, omit the other transcript or pass `None`. The known
-partner still requires its breakpoint and retained terminus. Either partner
-slot can hold the known transcript.
+For a single known gene, omit the other transcript or pass `None`. The known partner still requires its breakpoint and retained terminus. Either partner slot can hold the known transcript.
 
 Example:
 
@@ -60,24 +58,14 @@ The retained terminus of each fusion partner:
 
 ```python
 "N"
-
 "C"
 ```
 
-An N/C or C/N pair supports product reconstruction. N/N and C/C pairs raise
-`NotImplementedError`. A single known N- or C-terminal partner remains valid
-and is assumed disruptive. Its retained portion is spliced and checked.
+An N/C or C/N pair supports product reconstruction. N/N and C/C pairs raise `NotImplementedError`. A single known N- or C-terminal partner remains valid and is assumed disruptive. Its retained portion is spliced and checked.
 
-Both single-partner events and N/C products use a surviving native ATG.
-If no native start survives and some annotated coding sequence remains, the
-first ATG in the complete spliced sequence is used, in any phase. This includes
-ATGs created across a reconstructed fusion junction. Features are checked for
-start-related loss, compatibility with their original coding frame, and
-premature termination.
+Both single-partner events and N/C products use a surviving native ATG. If no native start survives and some annotated coding sequence remains, the first ATG in the complete spliced sequence is used, in any phase. This includes ATGs created across a reconstructed fusion junction. Features are checked for start-related loss, compatibility with their original coding frame, and premature termination.
 
-The `translation_start` summary reports when an alternative start is selected.
-This is an ATG-based initiation heuristic applied to the known sequence. For a
-single-partner event, the unknown partner and its junction are not reconstructed.
+The `translation_start` summary reports when an alternative start is selected. This is an ATG-based initiation heuristic applied to the known sequence. For a single-partner event, the unknown partner and its junction are not reconstructed.
 
 For example, to annotate one known partner:
 
@@ -113,7 +101,10 @@ Inserted sequence is included during fusion reconstruction and can affect readin
 A successful result contains:
 
 ```python
-{"frame_status": "in_frame", "domains": [...]}
+{
+    "frame_status": "in_frame",
+    "domains": [...]
+}
 ```
 
 ### `frame_status`
@@ -127,19 +118,11 @@ Possible values:
 | `in_frame/out_of_frame` | Different predicted splice products produce different frame states |
 | `None` | No translated original CDS remains, or no start was found in an isolated retained portion |
 
-Single-partner results also contain `assumed_disruptive: True`.
-This labels the event assumption independently of domain predictions. Their
-frame summary describes the known retained portion. Domains
-still report the retained, partially retained, and excluded features of each
-known partner, together with their splicing and sequence checks.
+Single-partner results also contain `assumed_disruptive: True`. This labels the event assumption independently of domain predictions. Their frame summary describes the known retained portion. Domains still report the retained, partially retained, and excluded features of each known partner, together with their splicing and sequence checks.
 
 ### `translation_start`
 
-Results include one initiation summary keyed by the transcript supplying the
-selected native start, or the intended initiating transcript if its start is
-lost or an alternative start is used. Initiation is assessed in the complete
-spliced fusion product. Using the same transcript for both partners does not
-produce duplicate statuses:
+Results include one initiation summary keyed by the transcript supplying the selected native start, or the intended initiating transcript if its start is lost or an alternative start is used. Initiation is assessed in the complete spliced fusion product. Using the same transcript for both partners does not produce duplicate statuses:
 
 ```python
 "translation_start": {
@@ -156,8 +139,7 @@ Each value uses the following controlled vocabulary:
 | `alternative_start_not_found` | The native start is lost; an ATG search found no alternative start |
 | `native_start_lost` | The native start is lost and no annotated coding sequence remains, so no alternative ATG search was performed |
 
-Distinct outcomes from alternative splice products are deduplicated and joined
-with `/`, in the table order. For example:
+Distinct outcomes from alternative splice products are deduplicated and joined with `/`, in the table order. For example:
 
 ```python
 "translation_start": {
@@ -165,13 +147,9 @@ with `/`, in the table order. For example:
 }
 ```
 
-Separate transcript keys can occur if alternative products initiate from
-different transcripts; each product has only one selected initiation site.
+Separate transcript keys can occur if alternative products initiate from different transcripts; each product has only one selected initiation site.
 
-These outcomes describe the retained, spliced sequence. They do not predict
-initiation supplied by an unknown partner. A native ATG cut in half is lost.
-For an N/C product whose N-terminal portion is UTR-only, a surviving native
-start in the C-terminal portion supplies initiation.
+These outcomes describe the retained, spliced sequence. They do not predict initiation supplied by an unknown partner. A native ATG cut in half is lost. For an N/C product whose N-terminal portion is UTR-only, a surviving native start in the C-terminal portion supplies initiation.
 
 ### `domains`
 
@@ -238,9 +216,7 @@ This reflects genomic retention before considering fusion splicing or translatio
 
 Multiple possible predictions may be slash-delimited.
 
-These checks apply to both `included` and `disrupted` features. For a disrupted
-feature, downstream `preserved` describes only the retained portion; the original
-domain remains disrupted. Completely excluded features have no downstream status.
+These checks apply to both `included` and `disrupted` features. For a disrupted feature, downstream `preserved` describes only the retained portion; the original domain remains disrupted. Completely excluded features have no downstream status.
 
 #### `post_translation_status`
 
@@ -258,8 +234,7 @@ Multiple possible predictions may be slash-delimited.
 
 ## Errors
 
-Transcript retrieval failures and invalid partner inputs return an
-`EnsemblError` dictionary containing an `error` message. This includes:
+Transcript retrieval failures and invalid partner inputs return an `EnsemblError` dictionary containing an `error` message. This includes:
 
 - no known transcript
 - a known partner without a breakpoint or N/C terminus
@@ -267,7 +242,4 @@ Transcript retrieval failures and invalid partner inputs return an
 - breakpoint chromosome/transcript chromosome mismatch
 - breakpoints outside the transcript span
 
-Reference configuration failures and missing required preprocessing metadata
-still raise exceptions. Two known partners with N/N or C/C termini raise
-`NotImplementedError`. N/None and C/None remain valid and are annotated as
-assumed disruptive; metadata on the missing partner is ignored.
+Reference configuration failures and missing required preprocessing metadata still raise exceptions. Two known partners with N/N or C/C termini raise `NotImplementedError`. N/None and C/None remain valid and are annotated as assumed disruptive; metadata on the missing partner is ignored.

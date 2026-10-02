@@ -2,11 +2,11 @@ import gzip
 import io
 import logging
 import sqlite3
-import threading
 
 import pytest
 
 from fusion_function import data
+
 from .preprocessing_fixture import fixture, uniprot_file
 
 
@@ -26,7 +26,6 @@ def bars(monkeypatch):
         unit_divisor=1000,
         disable=None,
         file=None,
-        bar_format=None,
     ):
         bar = original(
             iterable,
@@ -37,7 +36,6 @@ def bars(monkeypatch):
             unit_divisor=unit_divisor,
             disable=False,
             file=io.StringIO(),
-            bar_format=bar_format,
         )
         created.append(bar)
         return bar
@@ -104,7 +102,7 @@ def test_preprocessing_has_exact_transcript_total(tmp_path, bars):
     db.close()
 
 
-def test_sqlite_activity_has_no_invented_total_and_resets_handler(bars):
+def test_sqlite_activity_creates_no_bar_and_resets_handler(bars):
     class Connection:
         def __init__(self):
             self.db = sqlite3.connect(":memory:")
@@ -119,7 +117,7 @@ def test_sqlite_activity_has_no_invented_total_and_resets_handler(bars):
 
     db = Connection()
     assert data.sqlite_phase(db, "PRAGMA integrity_check", "Check database") == [("ok",)]
-    assert bars[-1].total is None
+    assert not bars
     assert db.handlers[-1] is None
     with pytest.raises(sqlite3.OperationalError):
         data.sqlite_phase(db, "SELECT * FROM missing", "Failing query")
@@ -127,100 +125,59 @@ def test_sqlite_activity_has_no_invented_total_and_resets_handler(bars):
     db.db.close()
 
 
-def test_sqlite_timer_refreshes_during_blocked_execute_and_stops(monkeypatch, bars):
-    """Elapsed output must update even if SQLite never calls a progress hook."""
-    monkeypatch.setattr(data, "SQLITE_REFRESH_SECONDS", 0.01)
-    refreshed = threading.Event()
-    caller = threading.get_ident()
-    original = data.progress
-
-    def recording(
-        iterable=None,
-        *,
-        total=None,
-        desc="",
-        unit="it",
-        unit_scale=False,
-        unit_divisor=1000,
-        disable=None,
-        file=None,
-        bar_format=None,
-    ):
-        bar = original(
-            iterable,
-            total=total,
-            desc=desc,
-            unit=unit,
-            unit_scale=unit_scale,
-            unit_divisor=unit_divisor,
-            disable=disable,
-            file=file,
-            bar_format=bar_format,
-        )
-        refresh = bar.refresh
-
-        def tracked_refresh(nolock=False, lock_args=None):
-            if threading.get_ident() != caller:
-                refreshed.set()
-            return refresh(nolock=nolock, lock_args=lock_args)
-
-        bar.refresh = tracked_refresh
-        return bar
-
-    monkeypatch.setattr(data, "progress", recording)
-
-    class Connection:
-        def set_progress_handler(self, callback, interval):
-            # Deliberately never invoke it: the independent timer must update.
-            pass
-
-        def execute(self, sql):
-            assert threading.get_ident() == caller
-            assert refreshed.wait(2), "Timer did not refresh while execute was blocked"
-            return self
-
-        def fetchall(self):
-            return [("ok",)]
-
-    assert data.sqlite_phase(Connection(), "PRAGMA integrity_check", "Blocked check") == [("ok",)]
-    assert refreshed.is_set()
-    assert bars[-1].total is None
-    assert not any(
-        thread.name == "fusion-function-sqlite-timer" for thread in threading.enumerate()
-    )
-    with pytest.raises(RuntimeError, match="failed work"):
-        with data.sqlite_activity("Failing work"):
-            raise RuntimeError("failed work")
-    assert not any(
-        thread.name == "fusion-function-sqlite-timer" for thread in threading.enumerate()
-    )
-
-
-def test_redirected_sqlite_activity_logs_heartbeat_and_phase_outcome(monkeypatch, caplog):
-    monkeypatch.setattr(data, "SQLITE_REFRESH_SECONDS", 0.01)
-    monkeypatch.setattr(data, "SQLITE_LOG_SECONDS", 0.01)
-    heartbeat = threading.Event()
-
-    class Capture(logging.Handler):
-        def emit(self, record):
-            if "still running" in record.getMessage():
-                heartbeat.set()
-
-    handler = Capture()
-    data.LOG.addHandler(handler)
+@pytest.mark.parametrize(
+    ("error", "outcome"),
+    [(None, "done"), (RuntimeError("failed work"), "failed"), (KeyboardInterrupt(), "interrupted")],
+)
+def test_sqlite_activity_logs_only_boundaries(bars, caplog, error, outcome):
     token = data.STEP_PREFIX.set("[3/3] ")
     try:
         with caplog.at_level(logging.INFO):
-            with data.sqlite_activity("Prepare ordered protein feature stream"):
-                assert heartbeat.wait(2), "Redirected output did not receive a heartbeat"
+            if error is None:
+                with data.sqlite_activity("Create derived tables"):
+                    pass
+            else:
+                with pytest.raises(type(error)):
+                    with data.sqlite_activity("Create derived tables"):
+                        raise error
     finally:
         data.STEP_PREFIX.reset(token)
-        data.LOG.removeHandler(handler)
-    assert "[3/3] Prepare ordered protein feature stream: still running" in caplog.text
-    assert "[3/3] Prepare ordered protein feature stream: done" in caplog.text
-    assert not any(
-        thread.name == "fusion-function-sqlite-timer" for thread in threading.enumerate()
-    )
+    assert [record.getMessage() for record in caplog.records] == [
+        "[3/3] Create derived tables",
+        f"[3/3] Create derived tables: {outcome}",
+    ]
+    assert not bars
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        "Drop previous ff_transcripts",
+        "Preprocess transcripts",
+        "Check database",
+        "Download dna FASTA",
+        "Import dna FASTA",
+        "Import pep FASTA",
+        "Import reviewed human UniProt",
+        "Import protein_feature",
+        "Index protein_feature",
+        "Index prepared transcripts",
+        "Analyze database",
+        "Read UniProt protein cross-references",
+        "Read genome and protein sequence lengths",
+        "Prepare ordered exon stream",
+        "Prepare ordered protein feature stream",
+        "Prepare transcript stream",
+        "Commit preprocessed reference",
+        "Roll back preprocessing transaction",
+    ],
+)
+def test_long_operations_have_one_advance_notice(description, caplog):
+    with caplog.at_level(logging.INFO):
+        data.long_process_notice(description)
+    assert len(caplog.records) == 1
+    assert description in caplog.records[0].getMessage()
+    assert "can take" in caplog.records[0].getMessage()
 
 
 def test_preprocessing_labels_preparation_indexing_and_commit(tmp_path, caplog):
@@ -258,10 +215,9 @@ def test_redirected_output_disables_terminal_redraws():
 def test_numbered_steps_label_bars_and_reset_on_error(bars, caplog):
     with caplog.at_level(logging.INFO):
         steps = data.BuildSteps(2)
-        with steps.step("Download inputs"):
-            with data.progress(total=1, desc="Download") as bar:
-                assert bar.desc == "[1/2] Download"
-                bar.update(1)
+        with steps.step("Download inputs"), data.progress(total=1, desc="Download") as bar:
+            assert bar.desc == "[1/2] Download"
+            bar.update(1)
         with pytest.raises(ValueError, match="interrupted stage"):
             with steps.step("Import inputs"):
                 with data.progress(total=1, desc="Import") as bar:
