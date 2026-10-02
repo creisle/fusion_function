@@ -13,17 +13,48 @@ fusion-function prepare-data
 
 Preparation downloads and builds the latest Ensembl reference in the default user cache. It can take an hour or longer and needs several GB of disk space.
 
-```python
-from fusion_function import annotate_fusion_domains
+Use the annotate_fusion_domains function to get information about the status of various domains in the expected fusion product
 
-result = annotate_fusion_domains(
-    transcript1_id="ENST00000305877",
-    transcript2_id="ENST00000318560",
-    breakpoint1="22:23290413",
-    breakpoint2="9:130854064",
-    gene1_terminus="N",
-    gene2_terminus="C",
-)
+```python
+from fusion_function import ReferenceDatabase, annotate_fusion_domains
+
+with ReferenceDatabase() as ref:
+    # ex. BCR::ABL1
+    result = annotate_fusion_domains(
+        transcript1_id="ENST00000305877", # BCR
+        transcript2_id="ENST00000318560", # ABL1
+        breakpoint1="22:23290413",
+        breakpoint2="9:130854064",
+        gene1_terminus="N",
+        gene2_terminus="C",
+        reference=ref
+    )
+```
+
+Thisw will return an object with the following shape. See the [api](./docs/api.md) for details.
+
+```json
+{
+    "frame_status": "in_frame",
+    "domains": [
+        {
+            "transcript_id": "ENST00000305877",
+            "interpro_id": "IPR036481",
+            "name": "Bcr-Abl oncoprotein oligomerisation domain superfamily",
+            "domain_type": "homologous_superfamily",
+            "start": 1,
+            "end": 67,
+            "sources": ["SuperFamily"],
+            "feature_ids": ["SSF69036"],
+            "breakpoint_based_status": "included",
+            "breakpoint_retained_percent": 100.0,
+            "post_splicing_status": "preserved",
+            "post_translation_status": "preserved"
+        },
+        ...
+    ],
+    "translation_start": {"ENST00000305877": "native_start_retained"}
+}
 ```
 
 Analysis uses the newest prepared local release by default.
