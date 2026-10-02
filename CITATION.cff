@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: If you use fusion-function, please cite the MAVIS paper below.
+title: fusion-function
+type: software
+authors:
+- family-names: Reisle
+  given-names: Caralyn
+repository-code: https://github.com/creisle/fusion_function
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Reisle
+    given-names: Caralyn
+  - family-names: Mungall
+    given-names: Karen L.
+  - family-names: Choo
+    given-names: Caleb
+  - family-names: Paulino
+    given-names: Daniel
+  - family-names: Bleile
+    given-names: Dustin W.
+  - family-names: Muhammadzadeh
+    given-names: Amir
+  - family-names: Mungall
+    given-names: Andrew J.
+  - family-names: Moore
+    given-names: Richard A.
+  - family-names: Shlafman
+    given-names: Inna
+  - family-names: Coope
+    given-names: Robin
+  - family-names: Pleasance
+    given-names: Stephen
+  - family-names: Ma
+    given-names: Yussanne
+  - family-names: Jones
+    given-names: Steven J. M.
+  title: 'MAVIS: merging, annotation, validation, and illustration of structural variants'
+  journal: Bioinformatics
+  year: 2019
+  volume: '35'
+  issue: '3'
+  start: '515'
+  end: '517'
+  doi: 10.1093/bioinformatics/bty621
+  url: https://doi.org/10.1093/bioinformatics/bty621
