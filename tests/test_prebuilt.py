@@ -17,9 +17,9 @@ import pytest
 from fusion_function import annotate_fusion_domains, data, prebuilt
 from fusion_function.cli import main
 from fusion_function.reference import ReferenceDatabase
+from tests import test_human_reference
 from tests.preprocessing_fixture import fixture
 from tests.test_prepare_options import entries_file
-from tests import test_human_reference
 
 
 class Response(io.BytesIO):
@@ -355,12 +355,26 @@ def test_empty_catalog_and_explicit_source_fallback(
     assert calls == [True, True]
 
 
-def test_catalog_outage_uses_bundled_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("populated", [False, True])
+def test_catalog_outage_uses_bundled_copy(
+    exported: tuple[Path, Path, dict[str, Any]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    populated: bool,
+) -> None:
+    # Test fallback independently of the references shipped with the package.
+    _, _, entry = exported
+    expected = [entry] if populated else []
+    bundled = tmp_path / "bundled_catalog.json"
+    bundled.write_text(json.dumps({"catalog_version": 1, "references": expected}))
+    monkeypatch.setattr(prebuilt, "CATALOG_PATH", bundled)
+    monkeypatch.delenv("FUSION_FUNCTION_REFERENCE_CATALOG", raising=False)
+
     def unavailable(url: str) -> Response:
         raise urllib.error.URLError("offline")
 
     monkeypatch.setattr(data, "open_url", unavailable)
-    assert prebuilt.read_catalog() == []
+    assert prebuilt.read_catalog() == expected
     with pytest.raises(urllib.error.URLError):
         prebuilt.read_catalog("https://example.test/catalog.json")
 
