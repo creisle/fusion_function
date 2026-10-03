@@ -1,6 +1,6 @@
 # Fusion-function
 
-![Coverage](https://raw.githubusercontent.com/creisle/fusion_function/badges/badges/main/coverage.svg) [![PyPI version](https://img.shields.io/pypi/v/fusion-function.svg)](https://pypi.org/project/fusion-function/)
+![Coverage](https://raw.githubusercontent.com/creisle/fusion_function/badges/badges/main/coverage.svg) [![PyPI version](https://img.shields.io/pypi/v/fusion-function.svg?label=PyPI&cacheSeconds=300)](https://pypi.org/project/fusion-function/)
 
 Predict fusion reading frames and retained, disrupted, or excluded functional protein features from human GRCh38 transcript breakpoints. Predictions include effects of splicing, translation initiation, and premature termination. Annotation uses a preprocessed local SQLite reference.
 
