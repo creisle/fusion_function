@@ -127,7 +127,7 @@ def test_cli_dispatch_and_automatic_interpro(monkeypatch, tmp_path):
     monkeypatch.setattr(
         data, "build", lambda args: captured.append(args) or tmp_path / "fake.sqlite"
     )
-    assert main(["prepare-data", "--release", "116"]) == 0
+    assert main(["prepare-data", "--from-source", "--release", "116"]) == 0
     assert captured[0].release == 116
     assert captured[0].interpro_entries is None  # No local override: load the default metadata.
     assert captured[0].species == "homo_sapiens"

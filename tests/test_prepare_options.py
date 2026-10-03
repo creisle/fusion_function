@@ -211,7 +211,7 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
     monkeypatch.setattr(data, "open_url", open_url)
     cache = tmp_path / "cache"
     with caplog.at_level(logging.INFO):
-        assert data.main(["--cache-dir", str(cache)]) == 0
+        assert data.main(["--from-source", "--cache-dir", str(cache)]) == 0
     steps = re.findall(r"\[Step (\d+)/(\d+)\]", caplog.text)
     assert steps == [(str(number), "24") for number in range(1, 25)]
     assert "Completed all 24 steps" in caplog.text
@@ -247,7 +247,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
         "validate_dna_regions",
         lambda db: (_ for _ in ()).throw(ValueError("DNA validation failed")),
     )
-    assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    assert (
+        data.main(["--from-source", "--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    )
     assert imported == ["dna"]  # Fail before spending time importing peptide FASTA.
     assert path.read_bytes() == previous
     monkeypatch.setattr(data, "validate_dna_regions", original_validate)
@@ -259,7 +261,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
             (_ for _ in ()).throw(ValueError("injected failure"))
         ),
     )
-    assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    assert (
+        data.main(["--from-source", "--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    )
     assert path.read_bytes() == previous
     assert not list(cache.rglob("*.building.*"))
     checkpoint = path.with_name(path.name + ".building")
@@ -277,7 +281,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
         "import_fasta",
         lambda db, kind, path, *, resume=False: pytest.fail("Reimported completed FASTA"),
     )
-    assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 0
+    assert (
+        data.main(["--from-source", "--cache-dir", str(cache), "--release", "116", "--force"]) == 0
+    )
     assert not checkpoint.exists()
     with data.ReferenceReader(path) as reader:
         assert "error" not in reader.get_transcript("ENST00000000001")
@@ -293,7 +299,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
 
     monkeypatch.setattr(data, "sqlite_phase", fail_integrity)
     before_integrity = path.read_bytes()
-    assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    assert (
+        data.main(["--from-source", "--cache-dir", str(cache), "--release", "116", "--force"]) == 1
+    )
     assert path.read_bytes() == before_integrity
     with sqlite3.connect(checkpoint) as db:
         assert (
@@ -320,7 +328,9 @@ def test_full_build_fixed_inputs_paths_and_atomic_replacement(tmp_path, monkeypa
         "import_fasta",
         lambda db, kind, path, *, resume=False: pytest.fail("Reimported completed FASTA"),
     )
-    assert data.main(["--cache-dir", str(cache), "--release", "116", "--force"]) == 0
+    assert (
+        data.main(["--from-source", "--cache-dir", str(cache), "--release", "116", "--force"]) == 0
+    )
     assert not checkpoint.exists()
     with sqlite3.connect(path) as db:
         assert db.execute("SELECT COUNT(*) FROM source_files").fetchone()[0] == len(data.TABLES) + 5

@@ -61,7 +61,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
 from contextvars import ContextVar
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from itertools import groupby
 from pathlib import Path
@@ -513,10 +513,10 @@ def parse_schema(path: Path) -> dict[str, list[tuple[str, str]]]:
         text = stream.read()
     tables = {}
     for match in re.finditer(
-        r"CREATE TABLE(?: IF NOT EXISTS)? `([^`]+)`\s*\((.*?)\n\)", text, re.DOTALL
+        r"CREATE TABLE(?: IF NOT EXISTS)? `([^`]+)`\s*\((.*?)\n\)", text, re.S
     ):
         columns = []
-        for column in re.finditer(r"^\s*`([^`]+)`\s+([A-Za-z]+)", match[2], re.MULTILINE):
+        for column in re.finditer(r"^\s*`([^`]+)`\s+([A-Za-z]+)", match[2], re.M):
             mysql_type = column[2].lower()
             # Ignore MySQL constraints/options; imports need only SQLite affinities.
             if mysql_type in {"tinyint", "smallint", "mediumint", "int", "bigint"}:
@@ -1211,8 +1211,18 @@ def validate_reference_source(db: sqlite3.Connection) -> dict[str, str]:
     required.update({"build_metadata", "sequences", "sequence_chunks"})
     missing = required - available
     if missing:
+        if (
+            "build_metadata" in available
+            and dict(db.execute("SELECT key, value FROM build_metadata")).get("reference_kind")
+            == "runtime"
+        ):
+            raise ValueError(
+                "This compact prebuilt reference has no Ensembl source tables. "
+                "Install a newer prebuilt with prepare-data --release RELEASE --force, "
+                "or build a full reference with --from-source before reprocessing."
+            )
         raise ValueError(
-            f"Preprocessing needs {sorted(missing)}; rebuild with 'fusion-function prepare-data'"
+            f"Preprocessing needs {sorted(missing)}; rebuild with 'fusion-function prepare-data --from-source'"
         )
     metadata = dict(db.execute("SELECT key, value FROM build_metadata"))
     if metadata.get("format_version") != "1":
@@ -1886,7 +1896,7 @@ def preprocess_reference(
             "transcript_payload_codec": TRANSCRIPT_PAYLOAD_CODEC,
             "preprocessing_counts": json.dumps(counts),
             "preprocessing_errors": json.dumps(errors),
-            "preprocessed_utc": datetime.now(UTC).isoformat(),
+            "preprocessed_utc": datetime.now(timezone.utc).isoformat(),
             "interpro_entries_sha256": (
                 sha256_file(interpro_entries)
                 if interpro_entries
@@ -2358,7 +2368,7 @@ def build(args: argparse.Namespace) -> Path:
                 "species": args.species,
                 "core_database": core,
                 "assembly": ASSEMBLY,
-                "created_utc": datetime.now(UTC).isoformat(),
+                "created_utc": datetime.now(timezone.utc).isoformat(),
                 "sequence_chunk_size": str(CHUNK_SIZE),
                 "sequence_codec": "zlib",
                 "tables": json.dumps(TABLES),
@@ -2465,13 +2475,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--base-url", help="Advanced: FTP HTTP(S) mirror root, ending at /pub/")
     parser.add_argument(
-        "--force", action="store_true", default=None, help="Replace output after a successful build"
+        "--from-source",
+        action="store_true",
+        default=None,
+        help="Build from Ensembl FTP instead of downloading a compatible prebuilt reference",
+    )
+    parser.add_argument(
+        "--reference-catalog",
+        help="Prebuilt catalog: local JSON or HTTPS URL; default: maintained catalog",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=None,
+        help="Replace output after successful installation or build",
     )
     parser.add_argument(
         "--preprocess-only",
         type=Path,
         metavar="DB",
-        help="Add/replace derived tables without downloading Ensembl again",
+        help="Regenerate derived tables in a full source-built database",
     )
     parser.add_argument(
         "--interpro-entries",
@@ -2499,11 +2522,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         # options cannot change where its existing coordinates came from.
         incompatible = [
             "--" + name.replace("_", "-")
-            for name in ("release", "species", "output", "base_url", "force")
+            for name in (
+                "release",
+                "species",
+                "output",
+                "base_url",
+                "force",
+                "from_source",
+                "reference_catalog",
+            )
             if getattr(args, name) is not None
         ]
         if incompatible:
             parser.error("--preprocess-only cannot be combined with " + ", ".join(incompatible))
+    source_options = args.from_source or any(
+        getattr(args, name) is not None
+        for name in ("base_url", "interpro_entries", "panther_classifications", "uniprot_features")
+    )
+    if args.reference_catalog and source_options:
+        parser.error("--reference-catalog cannot be combined with source-build options")
     if args.interpro_entries:
         args.interpro_entries = args.interpro_entries.expanduser().resolve()
         if not args.interpro_entries.is_file():
@@ -2540,7 +2577,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     LOG.info("UniProt feature cache: %s", args.cache_dir / "metadata" / "uniprot")
     LOG.info("PANTHER human classification cache: %s", args.cache_dir / "metadata" / "panther")
-    LOG.info("Partial downloads are created beside cached files as <filename>.<random>.part")
+    LOG.info("Prebuilt download cache: %s", args.cache_dir / "prebuilt")
+    LOG.info("Source partial downloads: <filename>.<random>.part beside cached files")
+    LOG.info("Prebuilt partial downloads: <cache>/prebuilt/<sha256>/ensembl.sqlite.gz.part")
     if args.interpro_entries:
         LOG.info("Local InterPro entries: %s", args.interpro_entries)
     if args.panther_classifications:
@@ -2557,7 +2596,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     output,
                 )
                 steps = BuildSteps(4)
-                with closing(sqlite3.connect(output.as_uri() + "?mode=rw", uri=True)) as db:
+                with (
+                    build_lock(output.with_name(output.name + ".prepare.lock")),
+                    closing(sqlite3.connect(output.as_uri() + "?mode=rw", uri=True)) as db,
+                ):
                     with steps.step("Validate existing reference database"):
                         validate_reference_source(db)
                     with steps.step("Prepare InterPro metadata"):
@@ -2605,7 +2647,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                     / f"release-{args.release or '<latest>'}"
                     / "ensembl.sqlite",
                 )
-                output = build(args)
+                output = None
+                if not source_options:
+                    from .prebuilt import install_reference
+
+                    output = install_reference(
+                        release=args.release,
+                        cache_dir=args.cache_dir,
+                        output=args.output,
+                        force=args.force,
+                        catalog=args.reference_catalog,
+                    )
+                else:
+                    LOG.info("Source-build options selected; skipping the prebuilt catalog")
+                if output is None:
+                    output = build(args)
         except (
             OSError,
             ValueError,

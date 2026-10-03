@@ -1,0 +1,82 @@
+{
+  "catalog_version": 1,
+  "references": [
+    {
+      "species": "homo_sapiens",
+      "assembly": "GRCh38",
+      "release": 116,
+      "build_revision": 1,
+      "filename": "homo_sapiens.GRCh38.ensembl-116.ff-v1.build-1.sqlite.gz",
+      "compression": "gzip",
+      "archive_bytes": 2245743354,
+      "archive_sha256": "65222b7637ecfcb1ecff9d6862eeb20da9ac2d471a49d8c05568bc3f978c5866",
+      "database_bytes": 2727596032,
+      "database_sha256": "d3ffd6b684598d392f3d4525bd7f368ed3563dff8534a2c80d8cb361350aa1d4",
+      "doi": "10.5281/zenodo.23111108",
+      "url": "https://zenodo.org/records/23111108/files/homo_sapiens.GRCh38.ensembl-116.ff-v1.build-1.sqlite.gz?download=1",
+      "metadata": {
+        "format_version": "1",
+        "preprocessing_version": "1",
+        "cds_mapping_version": "2",
+        "feature_annotation_version": "3",
+        "transcript_payload_codec": "zlib-json-v1",
+        "sequence_chunk_size": "1048576",
+        "sequence_codec": "zlib"
+      },
+      "data_source_notices": {
+        "Ensembl": {
+          "terms": "Unrestricted project-generated data; third-party constraints may apply.",
+          "url": "https://www.ensembl.org/info/about/legal/disclaimer.html"
+        },
+        "UniProt Consortium": {
+          "terms": "CC BY 4.0. Credit UniProt, link to the license and identify modifications.",
+          "url": "https://www.uniprot.org/help/license",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/"
+        },
+        "InterPro Consortium": {
+          "terms": "Current InterPro downloads: CC0 1.0. Retain historical-source notices.",
+          "url": "https://interpro-documentation.readthedocs.io/en/latest/license.html",
+          "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "PANTHER": {
+          "terms": "Classification release 14.1 and 17.0 READMEs carry GPL-2.0-or-later notices. Confirm terms for the imported release and derived classifications before redistribution.",
+          "url": "https://data.pantherdb.org/ftp/sequence_classifications/"
+        },
+        "Ensembl member annotations": {
+          "terms": "Member-source terms are not replaced by Ensembl or InterPro terms. PROSITE database terms are CC BY-NC-ND 4.0 with commercial licensing; SMART models require a license. Confirm terms for derived match annotations.",
+          "url": "https://prosite.expasy.org/prosite_license.html",
+          "smart_url": "https://smart.embl.de/about.cgi"
+        }
+      },
+      "source_metadata": {
+        "format_version": "1",
+        "release": "116",
+        "species": "homo_sapiens",
+        "core_database": "homo_sapiens_core_116_38",
+        "assembly": "GRCh38",
+        "created_utc": "2026-10-01T01:17:06.715364+00:00",
+        "sequence_chunk_size": "1048576",
+        "sequence_codec": "zlib",
+        "tables": "[\"meta\", \"coord_system\", \"seq_region\", \"gene\", \"transcript\", \"exon\", \"exon_transcript\", \"translation\", \"analysis\", \"protein_feature\", \"interpro\", \"xref\", \"external_db\", \"object_xref\"]",
+        "sequence_types": "[\"dna\", \"pep\"]",
+        "counts": "{\"meta\": 235, \"coord_system\": 9, \"seq_region\": 268640, \"gene\": 87735, \"transcript\": 672310, \"exon\": 1422168, \"exon_transcript\": 5252227, \"translation\": 384051, \"analysis\": 100, \"protein_feature\": 6690040, \"interpro\": 25300, \"xref\": 2751838, \"external_db\": 501, \"object_xref\": 7737725, \"dna_sequences\": 706, \"pep_sequences\": 382428}",
+        "preprocessing_version": "1",
+        "preprocessing_counts": "{\"ready\": 368066, \"noncoding\": 288242, \"error\": 16002, \"protein_features\": 6296276}",
+        "preprocessed_utc": "2026-10-02T17:30:44.172625+00:00",
+        "interpro_entries_sha256": "1d247a42670d4a2913cec9f2a58813135c736d65128c1078d9c5eac797ffef1c",
+        "interpro_entry_types_loaded": "true",
+        "interpro_historical_entries": "{\"IPR001423\": \"109.0\", \"IPR004734\": \"106.0\", \"IPR009133\": \"109.0\", \"IPR010307\": \"108.0\", \"IPR017198\": \"106.0\", \"IPR018798\": \"107.0\", \"IPR019321\": \"108.0\", \"IPR024812\": \"109.0\", \"IPR026516\": \"109.0\", \"IPR026570\": \"109.0\", \"IPR029065\": \"107.0\", \"IPR031101\": \"109.0\", \"IPR032922\": \"107.0\", \"IPR033489\": \"109.0\", \"IPR033509\": \"109.0\", \"IPR039163\": \"109.0\", \"IPR039681\": \"109.0\", \"IPR039715\": \"109.0\", \"IPR039747\": \"109.0\", \"IPR042012\": \"106.0\", \"IPR043040\": \"107.0\", \"IPR043041\": \"107.0\", \"IPR043042\": \"107.0\", \"IPR043504\": \"107.0\", \"IPR044613\": \"109.0\", \"IPR044986\": \"109.0\", \"IPR045150\": \"107.0\", \"IPR048456\": \"106.0\", \"IPR050058\": \"108.0\", \"IPR050079\": \"108.0\", \"IPR050082\": \"108.0\", \"IPR050089\": \"107.0\", \"IPR050115\": \"108.0\", \"IPR050123\": \"107.0\", \"IPR050149\": \"108.0\", \"IPR050174\": \"108.0\", \"IPR050203\": \"108.0\", \"IPR050223\": \"108.0\", \"IPR050224\": \"108.0\", \"IPR050247\": \"108.0\", \"IPR050332\": \"109.0\", \"IPR050369\": \"108.0\", \"IPR050374\": \"108.0\", \"IPR050382\": \"109.0\", \"IPR050383\": \"109.0\", \"IPR050514\": \"109.0\", \"IPR050518\": \"108.0\", \"IPR050527\": \"107.0\", \"IPR050544\": \"109.0\", \"IPR050569\": \"109.0\", \"IPR050628\": \"107.0\", \"IPR050650\": \"107.0\", \"IPR050657\": \"107.0\", \"IPR050741\": \"107.0\", \"IPR050778\": \"107.0\", \"IPR050802\": \"107.0\", \"IPR050803\": \"106.0\", \"IPR050888\": \"108.0\", \"IPR050904\": \"108.0\", \"IPR050912\": \"107.0\", \"IPR050915\": \"108.0\", \"IPR050937\": \"107.0\", \"IPR050951\": \"107.0\", \"IPR050958\": \"109.0\", \"IPR050969\": \"109.0\", \"IPR051012\": \"107.0\", \"IPR051022\": \"107.0\", \"IPR051027\": \"107.0\", \"IPR051029\": \"107.0\", \"IPR051061\": \"107.0\", \"IPR051064\": \"107.0\", \"IPR051110\": \"109.0\", \"IPR051170\": \"109.0\", \"IPR051179\": \"108.0\", \"IPR051205\": \"108.0\", \"IPR051232\": \"108.0\", \"IPR051237\": \"107.0\", \"IPR051266\": \"109.0\", \"IPR051270\": \"107.0\", \"IPR051288\": \"108.0\", \"IPR051334\": \"107.0\", \"IPR051387\": \"108.0\", \"IPR051412\": \"109.0\", \"IPR051425\": \"109.0\", \"IPR051441\": \"109.0\", \"IPR051458\": \"109.0\", \"IPR051478\": \"107.0\", \"IPR051550\": \"109.0\", \"IPR051569\": \"107.0\", \"IPR051630\": \"108.0\", \"IPR051637\": \"109.0\", \"IPR051647\": \"109.0\", \"IPR051694\": \"109.0\", \"IPR051728\": \"109.0\", \"IPR051742\": \"108.0\", \"IPR051827\": \"109.0\", \"IPR051969\": \"107.0\", \"IPR052083\": \"109.0\", \"IPR052097\": \"108.0\", \"IPR052130\": \"109.0\", \"IPR052145\": \"109.0\", \"IPR052273\": \"109.0\", \"IPR052301\": \"109.0\", \"IPR052346\": \"106.0\", \"IPR052376\": \"109.0\", \"IPR052392\": \"109.0\", \"IPR052504\": \"109.0\", \"IPR052555\": \"109.0\", \"IPR052579\": \"109.0\", \"IPR052660\": \"109.0\", \"IPR052696\": \"109.0\", \"IPR052881\": \"109.0\", \"IPR053019\": \"109.0\", \"IPR053099\": \"109.0\", \"IPR053374\": \"107.0\", \"IPR054602\": \"107.0\", \"IPR055047\": \"107.0\", \"IPR055074\": \"107.0\", \"IPR055351\": \"107.0\", \"IPR056552\": \"107.0\"}",
+        "interpro_historical_sources": "[{\"release\": \"109.0\", \"sha256\": \"00b86a43b14652470d1110133b26f91314d5bddf9f164da76c494d7b322752ec\", \"url\": \"https://ftp.ebi.ac.uk/pub/databases/interpro/releases/109.0/entry.list\"}, {\"release\": \"108.0\", \"sha256\": \"11ddc8e6624a3ddaf40d5528e5aaf0a87308bd1c58a3f7087208091ab5eefc29\", \"url\": \"https://ftp.ebi.ac.uk/pub/databases/interpro/releases/108.0/entry.list\"}, {\"release\": \"107.0\", \"sha256\": \"333770e997fc6b88a836650ac5c9475b8934b4beb52a5a084d7d2e10dcc4af05\", \"url\": \"https://ftp.ebi.ac.uk/pub/databases/interpro/releases/107.0/entry.list\"}, {\"release\": \"106.0\", \"sha256\": \"15d98e0805a05cdbe4935ab2086e65c6e204181ae87c0b06cc33a315eea4db4a\", \"url\": \"https://ftp.ebi.ac.uk/pub/databases/interpro/releases/106.0/entry.list\"}]",
+        "interpro_preserved_metadata_sha256": "1d247a42670d4a2913cec9f2a58813135c736d65128c1078d9c5eac797ffef1c",
+        "panther_classifications_source": "{\"sha256\": \"0635357eeae76cb6dce8ce498f20e7ad5e101fe5a81717003c97acb2ed009b32\", \"url\": \"https://data.pantherdb.org/ftp/sequence_classifications/19.0/PANTHER_Sequence_Classification_files/PTHR19.0_human\", \"version\": \"19.0\"}",
+        "feature_annotation_version": "3",
+        "uniprot_features_source": "{\"sha256\": \"3296aef04049bbf83a21f3335436c9f2d3a00f6186fc10e4e66854ac37b2e5ab\", \"url\": \"https://rest.uniprot.org/uniprotkb/stream?format=xml&compressed=true&query=organism_id%3A9606%20AND%20reviewed%3Atrue\"}",
+        "uniprot_counts": "{\"entries\": 20431, \"features\": 332987, \"matched_proteins\": 97684, \"reviewed_human_entries\": 20431, \"sequence_mismatches\": 19693}",
+        "cds_mapping_version": "2",
+        "preprocessing_errors": "{\"CDS/peptide length mismatch\": {\"count\": 14362, \"example_transcripts\": [\"ENST00000361390\", \"ENST00000361453\", \"ENST00000362079\"]}, \"Unsupported transcript coordinate system\": {\"count\": 1640, \"example_transcripts\": [\"LRG_1t1\", \"LRG_1000t1\", \"LRG_1001t1\"]}}",
+        "uniprot_lookup_fingerprint": "7f8c19064714799b35cca12a4320c26e40f21faef2ac0e9a3220ad005779ca33",
+        "transcript_payload_codec": "zlib-json-v1"
+      }
+    }
+  ]
+}

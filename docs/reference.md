@@ -22,7 +22,23 @@ fusion-function prepare-data
 fusion-function prepare-data --release 116
 ```
 
-The complete human reference needs several GB of downloads and working space. Preparation can take an hour or longer. It downloads Ensembl core tables, genomic and peptide FASTA, and annotation metadata; then imports and preprocesses them locally.
+`prepare-data` first looks for a compatible prebuilt human GRCh38 reference for the selected Ensembl release. Without `--release`, it resolves the latest numbered Ensembl FTP release; it does not substitute an older published reference. If no compatible artifact is registered, it logs that decision and builds from Ensembl source files. The initial catalog is empty until the first reference is published.
+
+Prebuilt installation has four numbered steps: download and verify the archive, expand the database, validate its format and release, and install it. Download and expansion progress bars show byte totals in a terminal. The selected URL, build revision, destination, archive size, expanded size and partial-file locations are logged. A failed artifact download or checksum check fails clearly rather than silently starting a source build.
+
+Interrupted downloads resume from `<cache>/prebuilt/<archive-sha256>/ensembl.sqlite.gz.part`; if the server ignores the resume request, the download restarts. Verified archives remain beside that file. Expansion uses `<output>.prebuilt.part` beside the destination and removes that temporary file on failure. Both compressed and expanded files require disk space; replacing an existing database temporarily also requires space for the old copy. SHA-256 and byte sizes are checked for both files, and the existing reference stays in place until successful atomic replacement. The exporter performs full SQLite integrity checking before publication; clients verify the exact artifact and runtime compatibility without repeating that long scan.
+
+An existing compatible database is reused unless `--force` is supplied. Published build revisions distinguish updated annotations for the same Ensembl release. Use `fusion-function prepare-data --release 116 --force` to install its newest compatible published revision.
+
+To build from source explicitly:
+
+```bash
+fusion-function prepare-data --from-source --release 116
+```
+
+Source builds download Ensembl core tables, genomic and peptide FASTA, and annotation metadata, then import and preprocess them locally. They need several GB of downloads and working space and can take an hour or longer. Explicit `--base-url`, `--interpro-entries`, `--panther-classifications` or `--uniprot-features` overrides also select source preparation, so custom inputs are not ignored.
+
+The default catalog is `https://raw.githubusercontent.com/creisle/fusion_function/main/src/fusion_function/reference_catalog.json`, with a bundled copy used if that URL is unavailable. It can be updated independently of package releases. Set `FUSION_FUNCTION_REFERENCE_CATALOG` or pass `--reference-catalog FILE_OR_HTTPS_URL` to select another catalog; explicit catalogs must load successfully. Catalog entries pin the species, assembly, Ensembl release, build revision, storage/preprocessing versions, download URL, sizes and SHA-256 checksums. Only compatible entries are selected. A catalog cannot be combined with explicit source-build options.
 
 The default database path is `<cache>/homo_sapiens/GRCh38/release-<release>/ensembl.sqlite`. The cache defaults to `~/.cache/fusion_function` on Linux, `~/Library/Caches/fusion_function` on macOS, or `%LOCALAPPDATA%/fusion_function` on Windows. Set `FUSION_FUNCTION_CACHEDIR` to change it for both preparation and analysis. `--cache-dir` overrides it for preparation only.
 
@@ -32,13 +48,13 @@ Prepared transcript models use lossless zlib-compressed JSON at level 1 in an or
 
 ## Resuming a full build
 
-Full builds save progress in `<output>.building`, beside the final database. Failures and interrupts retain this checkpoint. Repeat the same preparation command to resume: completed tables and FASTA files are skipped, and an interrupted FASTA import reuses committed complete records from the same checksum-verified input. Compressed FASTA must still be reread to reach the next record, but completed sequences are not recompressed or inserted again. An unfinished table is reimported; unfinished transcript preprocessing is restarted as an atomic transaction. Completed preprocessing is reused after a later failure unless its implementation or metadata input changes. Integrity checking always runs before publication. Existing final references remain in place until a completed checkpoint atomically replaces them.
+Source builds save progress in `<output>.building`, beside the final database. Failures and interrupts retain this checkpoint. Repeat the same preparation command to resume: completed tables and FASTA files are skipped, and an interrupted FASTA import reuses committed complete records from the same checksum-verified input. Compressed FASTA must still be reread to reach the next record, but completed sequences are not recompressed or inserted again. An unfinished table is reimported; unfinished transcript preprocessing is restarted as an atomic transaction. Completed preprocessing is reused after a later failure unless its implementation or metadata input changes. Integrity checking always runs before publication. Existing final references remain in place until a completed checkpoint atomically replaces them.
 
 Checkpoint settings pin the FTP root, release, assembly, schema checksum and storage format. Incompatible checkpoints fail clearly; use another output path or remove the `.building` database to start again. `--force` permits replacing the final reference; it does not discard a resumable checkpoint. The persistent `<output>.prepare.lock` file prevents concurrent builders from writing the same checkpoint; its OS lock is released when the process exits. Both paths are printed at startup.
 
 ## Annotation inputs
 
-Preparation always loads InterPro entry metadata. By default it fetches the entry list or reuses a checksum-verified cached download. Use `--interpro-entries FILE` to supply local metadata for offline preparation. Missing entry types on usable transcripts fail preparation. Runtime annotation still never accesses the network.
+Source preparation always loads InterPro entry metadata; prebuilt references already contain it. By default it fetches the entry list or reuses a checksum-verified cached download. Use `--interpro-entries FILE` to supply local metadata for offline preparation. Missing entry types on usable transcripts fail preparation. Runtime annotation still never accesses the network.
 
 Ensembl can retain accessions omitted from the current InterPro list. Default fetching searches archived entry lists for missing types before transcript preprocessing, using the newest available historical metadata for each accession. Current types are never overwritten. The database records `interpro_historical_entries` (accession to source release) and `interpro_historical_sources` (release, URL, SHA-256). Archived files and partial downloads are stored under `<cache>/metadata/interpro/releases/<release>/`. Explicit local lists remain offline.
 
@@ -78,13 +94,15 @@ Use the updated package for both preparation and analysis. New references can us
 
 ### Regenerate annotations for the same Ensembl release
 
-Regenerate transcript models, protein features and splice-site annotations from the Ensembl tables and sequences already stored in your database:
+For a full source-built database, regenerate transcript models, protein features and splice-site annotations from the Ensembl tables and sequences already stored in it:
 
 ```bash
 fusion-function prepare-data --preprocess-only /path/to/ensembl.sqlite
 ```
 
-This does not repeat the genome import or the full-build SQLite integrity check. It keeps the database's Ensembl release and assembly; `--release`, `--output` and `--force` cannot be combined with `--preprocess-only`.
+Compact prebuilt references omit the raw Ensembl tables and cannot use `--preprocess-only`. Install a newer prebuilt with `--release RELEASE --force`, or create a full source reference with `--from-source --release RELEASE --force` before reprocessing. Exporting a compact reference leaves the original full database intact.
+
+Reprocessing a full source-built database does not repeat the genome import or the full-build SQLite integrity check. It keeps the database's Ensembl release and assembly; `--release`, `--output`, `--force`, `--from-source` and `--reference-catalog` cannot be combined with `--preprocess-only`.
 
 Use this after changes to preprocessing logic or annotation inputs. It is unnecessary for documentation, logging or other changes that do not affect the prepared records.
 
@@ -116,9 +134,9 @@ Compressed models can reuse freed pages, but an in-place update does not necessa
 
 ### Change or rebuild an Ensembl release
 
-A different Ensembl release needs a full build, using `fusion-function prepare-data --release RELEASE`. It has its own default database path. Analysis selects the newest prepared local release unless you pin it with `release=` or select a database explicitly.
+Install a different Ensembl release using `fusion-function prepare-data --release RELEASE`; a compatible prebuilt is downloaded when available, otherwise a source build runs. It has its own default database path. Analysis selects the newest prepared local release unless you pin it with `release=` or select a database explicitly.
 
-To rebuild an existing release from source files, add `--force`. Verified cached downloads are reused. The previous final database stays in place until a completed build passes integrity checking and is published. `--force` does not discard an existing `.building` checkpoint; see [Resuming a full build](#resuming-a-full-build).
+To rebuild an existing release from source files, add `--from-source --force`. Verified cached downloads are reused. The previous final database stays in place until a completed build passes integrity checking and is published. `--force` does not discard an existing `.building` checkpoint; see [Resuming a full build](#resuming-a-full-build).
 
 ## Debugging transcript errors
 
@@ -137,3 +155,54 @@ with ReferenceDatabase(release=116) as reference:
 ```
 
 If no saved summary exists, the reader derives it from the stored error records. Failed transcript annotation returns an error; an unsupported model is not evidence that a fusion lacks functional features.
+
+## Publishing a prebuilt reference
+
+Keep the full source-built database for maintenance and reprocessing. Run its built-reference tests before exporting:
+
+```bash
+pytest -m human_reference --human-reference-db=/path/to/ensembl.sqlite -v
+fusion-function export-reference --output reference-exports --build-revision 1
+```
+
+With no database path, export uses `FUSION_FUNCTION_DB` if set, otherwise the newest installed local release in the default cache, including a cache selected by `FUSION_FUNCTION_CACHEDIR`. Use `--release 116` to select an installed Ensembl release, or supply a database path explicitly. An explicit path takes precedence over `FUSION_FUNCTION_DB`; `--release` is checked against either selected database. Export never downloads or builds a missing reference. The selected source path is logged before export.
+
+```bash
+fusion-function export-reference --release 116 --output reference-exports --build-revision 1
+```
+
+`--release` selects the Ensembl release being exported; `--build-revision` labels this exported build of that release.
+
+The export creates a fresh SQLite snapshot containing transcript models, InterPro metadata, genomic and peptide sequence chunks, source checksums when present, and build provenance. Raw Ensembl tables and preprocessing lookup tables are omitted. The source is opened read-only and remains unchanged. The fresh database is integrity-checked, compressed with gzip, and accompanied by a JSON manifest containing exact compatibility metadata, sizes, hashes and source notices. Temporary paths are printed. Copying, integrity checking and compression can each take over ten minutes for a large reference.
+
+To publish from your `creisle` Zenodo account:
+
+1. Create a Zenodo upload and reserve its record ID. The account username identifies the owner; downloads require an exact public record/file URL.
+2. Export with `--zenodo-record RECORD_ID` to populate that URL in the manifest. Without this option, fill the manifest's `url` after publication; entries with a null URL are not downloadable.
+3. Upload the `.sqlite.gz` and `.json` files, include source attribution and applicable notices, and publish the record. Resolve the data-license questions below before choosing a license for the combined artifact.
+4. Append the manifest's reference entry to `src/fusion_function/reference_catalog.json` under `references`, keeping `catalog_version` equal to 1, and commit it to the repository's `main` branch. Test using `prepare-data --release RELEASE --reference-catalog MANIFEST.json --output /path/to/test.sqlite` with the published manifest.
+
+Keep published artifacts immutable. Increment `--build-revision` for new preprocessing or metadata of the same Ensembl release; the exporter refuses to overwrite an existing export. Use a new Zenodo version/record and its exact file URL for that build. The catalog selects the highest compatible build revision for each release. Do not add a SQLite file to the Python wheel or Git history. Record Zenodo's DOI in the release documentation for citation and reproducibility.
+
+## Data attribution and reuse
+
+These source terms are separate from the package's software license. The export embeds source-credit and modification notices in `build_metadata` and its manifest, along with input provenance. These summaries are not a blanket license for the combined database or a substitute for any required upstream copyright notices. This review covers the sources currently imported; it does not cover RMC, MTR or AlphaMissense, which are not imported.
+
+| Source | Published terms and implication for redistribution |
+|---|---|
+| [Ensembl](https://www.ensembl.org/info/about/legal/disclaimer.html) core tables and DNA/peptide FASTA | Ensembl imposes no restrictions on project-generated data, but explicitly preserves third-party constraints. Its Apache 2.0 software license does not license all database content. Retain release and source provenance. |
+| [UniProt](https://www.uniprot.org/help/license) reviewed human features and sequences | Copyrightable database content is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Redistribution and adaptation are allowed with credit, a license link and identification of changes. Credit the UniProt Consortium and describe the derived feature mappings/compression. |
+| [InterPro](https://interpro-documentation.readthedocs.io/en/latest/license.html) entry names and types | Current downloadable InterPro data are CC0 1.0. Historical entry lists should retain their source-release notices; current InterPro terms do not automatically license every member database's signature collections. |
+| [PANTHER human classifications](https://data.pantherdb.org/ftp/sequence_classifications/) | Classification READMEs for 14.1 and 17.0 carry GPL-2.0-or-later notices. Terms for the imported release, particularly 19.0, and derived subfamily names need confirmation before assigning a permissive license to the combined reference. Preserve the applicable notice and attribution. This is not a claim that the Python package itself must be GPL. |
+| Member annotations carried through Ensembl | The exact sources vary by release. [PROSITE](https://prosite.expasy.org/prosite_license.html) database terms are CC BY-NC-ND 4.0 with commercial licensing, and [SMART](https://smart.embl.de/about.cgi) models/alignments/thresholds require a license. The package imports derived match annotations rather than their models; confirm how those terms apply to redistribution of the matches. Do not assume Ensembl or InterPro removes these conditions. |
+
+Before publishing, inventory member sources in the full database and verify the terms of the exact imported releases:
+
+```sql
+SELECT a.logic_name, a.db, a.db_version, COUNT(*) AS matches
+FROM ensembl_protein_feature AS pf
+JOIN ensembl_analysis AS a USING (analysis_id)
+GROUP BY a.logic_name, a.db, a.db_version;
+```
+
+Retain the applicable license files, copyright notices, source URLs and checksums with the Zenodo deposit. The reviewed sources support reuse of much of the data, but PANTHER and member-annotation terms prevent an unconditional all-clear for a permissively licensed combined download until those questions are resolved.

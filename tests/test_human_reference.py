@@ -7,6 +7,7 @@ No substitute database, downloads, REST calls or synthetic transcript models.
 
 import json
 import re
+from typing import Any
 
 import pytest
 
@@ -21,7 +22,19 @@ GENES = [
 ]
 
 
-def canonical_transcript(reference, gene_id):
+def canonical_transcript(
+    reference: ReferenceDatabase, gene_id: str
+) -> tuple[str, int | None, dict[str, Any]]:
+    # Runtime exports omit source tables; keep functional checks on known models.
+    if reference.metadata.get("reference_kind") == "runtime":
+        transcript_id = {
+            "ENSG00000186716": "ENST00000305877",
+            "ENSG00000097007": "ENST00000318560",
+            "ENSG00000141510": "ENST00000269305",
+        }[gene_id]
+        payload = reference.get_transcript(transcript_id)
+        assert "error" not in payload, f"{transcript_id}: {payload.get('error')}"
+        return transcript_id, None, payload
     row = reference.db.execute(
         "SELECT t.stable_id, t.transcript_id FROM ensembl_gene g "
         "JOIN ensembl_transcript t ON t.transcript_id=g.canonical_transcript_id "
@@ -36,13 +49,18 @@ def canonical_transcript(reference, gene_id):
     return row[0], row[1], payload
 
 
-def test_complete_reference_metadata_and_counts(human_reference_db):
+def test_complete_reference_metadata_and_counts(human_reference_db: ReferenceDatabase) -> None:
     reference = human_reference_db
     assert reference.metadata["species"] == "homo_sapiens"
     assert reference.metadata["assembly"] == "GRCh38"
     assert re.fullmatch(r"[1-9]\d*", reference.metadata["release"])
     counts = json.loads(reference.metadata["counts"])
-    for table in json.loads(reference.metadata["tables"]):
+    source_tables = (
+        []
+        if reference.metadata.get("reference_kind") == "runtime"
+        else json.loads(reference.metadata["tables"])
+    )
+    for table in source_tables:
         actual = reference.db.execute(f"SELECT COUNT(*) FROM ensembl_{table}").fetchone()[0]
         assert actual == counts[table], f"Imported count differs for {table}"
     for kind in ("dna", "pep"):
@@ -102,7 +120,9 @@ def test_known_grch38_chromosome_lengths(human_reference_db, chromosome, length)
     assert row == (length,)
 
 
-def test_all_dna_records_match_grch38_core(human_reference_db):
+def test_all_dna_records_match_grch38_core(human_reference_db: ReferenceDatabase) -> None:
+    if human_reference_db.metadata.get("reference_kind") == "runtime":
+        pytest.skip("Runtime export omits Ensembl source coordinate tables")
     unmatched = human_reference_db.db.execute(
         "SELECT s.sequence_id, s.length FROM sequences s WHERE s.kind='dna' AND NOT EXISTS ("
         "SELECT 1 FROM ensembl_seq_region r JOIN ensembl_coord_system c USING (coord_system_id) "
@@ -111,19 +131,20 @@ def test_all_dna_records_match_grch38_core(human_reference_db):
     assert not unmatched, f"DNA records without a matching GRCh38 core region: {unmatched}"
 
 
-def test_reported_hschr10_cross_assembly_collision(human_reference_db):
+def test_reported_hschr10_cross_assembly_collision(human_reference_db: ReferenceDatabase) -> None:
     reference = human_reference_db
     row = reference.db.execute(
         "SELECT length FROM sequences WHERE kind='dna' AND sequence_id='HSCHR10_1_CTG2'"
     ).fetchone()
     assert row == (309802,)
-    regions = reference.db.execute(
-        "SELECT c.version,r.length FROM ensembl_seq_region r "
-        "JOIN ensembl_coord_system c USING (coord_system_id) WHERE r.name='HSCHR10_1_CTG2'"
-    ).fetchall()
-    assert ("GRCh38", 309802) in regions
-    if reference.metadata["release"] == "116":
-        assert ("GRCh37", 135582047) in regions
+    if reference.metadata.get("reference_kind") != "runtime":
+        regions = reference.db.execute(
+            "SELECT c.version,r.length FROM ensembl_seq_region r "
+            "JOIN ensembl_coord_system c USING (coord_system_id) WHERE r.name='HSCHR10_1_CTG2'"
+        ).fetchall()
+        assert ("GRCh38", 309802) in regions
+        if reference.metadata["release"] == "116":
+            assert ("GRCh37", 135582047) in regions
     sequence = reference.sequence("dna", "HSCHR10_1_CTG2", 1, 1000)
     assert len(sequence) == 1000
     assert set(sequence) <= set("ACGTRYSWKMBDHVN")
@@ -145,8 +166,8 @@ def test_sequence_chunks_and_reverse_complement(human_reference_db):
 
 @pytest.mark.parametrize("gene,gene_id,chromosome,strand", GENES, ids=[row[0] for row in GENES])
 def test_real_transcript_exons_cds_and_peptide(
-    human_reference_db, gene, gene_id, chromosome, strand
-):
+    human_reference_db: ReferenceDatabase, gene: str, gene_id: str, chromosome: str, strand: int
+) -> None:
     reference = human_reference_db
     transcript_id, internal_id, payload = canonical_transcript(reference, gene_id)
     assert payload["assembly_name"] == "GRCh38"
@@ -166,22 +187,21 @@ def test_real_transcript_exons_cds_and_peptide(
         else forward.translate(str.maketrans("ACGTRYSWKMBDHVN", "TGCAYRSWMKVHDBN"))[::-1]
     )
     assert sequence == expected
-    exons = reference.db.execute(
-        "SELECT et.rank,e.seq_region_start,e.seq_region_end,e.seq_region_strand "
-        "FROM ensembl_exon_transcript et JOIN ensembl_exon e USING(exon_id) "
-        "WHERE et.transcript_id=? ORDER BY et.rank",
-        (internal_id,),
-    ).fetchall()
-    assert [
-        (exon["exon_number"], exon["genomic_start"], exon["genomic_end"], strand)
-        for exon in payload["transcript_exons"]
-    ] == exons
-    assert len(payload["splice_sites"]) == 2 * (len(exons) - 1)
+    if internal_id is not None:
+        exons = reference.db.execute(
+            "SELECT et.rank,e.seq_region_start,e.seq_region_end,e.seq_region_strand "
+            "FROM ensembl_exon_transcript et JOIN ensembl_exon e USING(exon_id) "
+            "WHERE et.transcript_id=? ORDER BY et.rank",
+            (internal_id,),
+        ).fetchall()
+        assert [
+            (exon["exon_number"], exon["genomic_start"], exon["genomic_end"], strand)
+            for exon in payload["transcript_exons"]
+        ] == exons
+    assert len(payload["splice_sites"]) == 2 * (len(payload["transcript_exons"]) - 1)
     cds_length = sum(block["cds_end"] - block["cds_start"] + 1 for block in payload["cds_blocks"])
     protein_version = reference.db.execute(
-        "SELECT tr.version FROM ensembl_translation tr JOIN ensembl_transcript t "
-        "ON t.canonical_translation_id=tr.translation_id WHERE t.transcript_id=?",
-        (internal_id,),
+        "SELECT translation_version FROM ff_transcripts WHERE transcript_id=?", (transcript_id,)
     ).fetchone()[0]
     peptide = reference.sequence("pep", f"{payload['translation_id']}.{protein_version}")
     assert len(peptide) == payload["protein_length"]

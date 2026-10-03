@@ -25,7 +25,7 @@ To override the discovered database:
 pytest -m human_reference --human-reference-db=/path/to/ensembl.sqlite -v
 ```
 
-The selected database must be a completed, preprocessed reference. These tests open it in read-only mode and reject the small bundled regression fixture. The tests cover:
+The selected database must be a completed, preprocessed reference, either source-built or installed from a prebuilt artifact. These tests open it in read-only mode and reject the small bundled regression fixture. The tests cover:
 
 - Source and preprocessing counts, species/assembly/release metadata, and presence of primary chromosomes.
 - Known GRCh38 chromosome lengths and assembly-aware matching for every DNA record.
@@ -34,6 +34,8 @@ The selected database must be a completed, preprocessed reference. These tests o
 - Canonical BCR, ABL1, and TP53 models, including both strands, source exon ranks, pre-mRNA, CDS/peptide lengths, and versioned IDs.
 - InterPro metadata for their protein features.
 - BCR–ABL1 fusion annotation using the supplied full reference.
+
+Runtime exports run the same functional, sequence and preprocessing checks. Their raw-table count and source-exon comparisons are omitted, and the source-coordinate-table consistency test is skipped because those tables are deliberately absent. Known BCR, ABL1 and TP53 transcripts replace source-table canonical-transcript selection for these exports.
 
 The 63 built-reference cases are skipped when no local reference is available. An explicitly configured missing database or an invalid selected database fails the tests instead of being silently skipped. No transcript data is mocked in the built variants. They exercise representative transcript and fusion paths; sequence-region and count checks cover the entire selected database. They do not claim exhaustive biological validation of every possible fusion.
 
@@ -70,3 +72,5 @@ Partial-codon regressions cover both strands, missing one or two leading bases, 
 Structure-filter tests verify that AlphaFold/SIFTS mappings are omitted whether their intervals fit the peptide or exceed it, including differing pipeline and database labels. Actual functional features remain unchanged, and invalid domain coordinates still reject the transcript. Three built-reference checks cover the reported AlphaFold failures; older prepared models storing these errors fail.
 
 Compact-storage tests compare all 15 complete fusion regression outputs against compressed transcript models, check ordinary row storage and readable JSON errors, and reject unknown codecs. Existing plain-JSON fixtures remain readable. Rollback checks exercise the new storage while preserving the prior reference and the caller's secure-delete, journal and synchronous settings.
+
+Prebuilt-reference tests export a synthetic source database, compare complete transcript and fusion results before and after export, and verify the original database is unchanged. Mocked HTTP transfers test automatic installation, existing-reference reuse, resumable interruptions, restart when Range is ignored, archive/database checksum and size failures, release/format compatibility, source fallback and explicit source builds. They also check unpublished manifests and clear rejection of reprocessing a compact runtime reference. These tests do not require a Zenodo record or network access.

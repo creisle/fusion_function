@@ -11,7 +11,7 @@ pip install fusion-function
 fusion-function prepare-data
 ```
 
-Preparation downloads and builds the latest Ensembl reference in the default user cache. It can take an hour or longer and needs several GB of disk space.
+Preparation downloads a compatible prebuilt reference for the latest Ensembl release when available, otherwise builds it from source. The reference is stored in the default user cache; source builds can take an hour or longer.
 
 Use the annotate_fusion_domains function to get information about the status of various domains in the expected fusion product
 
@@ -21,17 +21,17 @@ from fusion_function import ReferenceDatabase, annotate_fusion_domains
 with ReferenceDatabase() as ref:
     # ex. BCR::ABL1
     result = annotate_fusion_domains(
-        transcript1_id="ENST00000305877", # BCR
-        transcript2_id="ENST00000318560", # ABL1
+        transcript1_id="ENST00000305877",  # BCR
+        transcript2_id="ENST00000318560",  # ABL1
         breakpoint1="22:23290413",
         breakpoint2="9:130854064",
         gene1_terminus="N",
         gene2_terminus="C",
-        reference=ref
+        reference=ref,
     )
 ```
 
-Thisw will return an object with the following shape. See the [api](./docs/api.md) for details.
+This will return an object with the following shape. See the [api](./docs/api.md) for details.
 
 ```json
 {
